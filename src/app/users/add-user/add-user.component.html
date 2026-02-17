@@ -1,3 +1,217 @@
+<!-- <div class="add-user-wrap">
+  <form #userForm="ngForm" (ngSubmit)="onSubmit(userForm)" class="user-form" novalidate>
+  
+    <header class="page-head">
+      <div>
+        <h1 class="form-title">{{ isEditMode() ? 'Edit User' : 'Create User' }}</h1>
+        <p class="form-description">Manage user details, roles, and account status.</p>
+      </div>
+
+     
+      <div class="quick-summary">
+        <div class="qs-item">
+          <div class="qs-label">Status</div>
+          <div class="qs-value" [class.ok]="user().isActive" [class.muted]="!user().isActive">
+            {{ user().isActive ? 'Active' : 'Inactive' }}
+          </div>
+        </div>
+        <div class="qs-item">
+          <div class="qs-label">Roles</div>
+          <div class="qs-value">
+            {{ user().roles?.length || 0 }} assigned
+          </div>
+        </div>
+      </div>
+    </header>
+
+
+    <div class="form-container">
+    
+      <div class="main-form-content">
+   
+        <section class="shopify-card">
+          <div class="card-header">
+            <div class="card-title">Personal Details</div>
+            <p class="card-subtitle">Basic information about the user.</p>
+          </div>
+
+          <div class="form-grid">
+          
+            <div class="form-field">
+              <label for="name">Full Name</label>
+              <input id="name"
+                     name="name"
+                     [(ngModel)]="user().name"
+                     required
+                     [disabled]="loading()"
+                     class="input-field"
+                     placeholder="John Doe"
+                     aria-required="true" />
+              <small class="help-text">Use the person’s legal or display name.</small>
+            </div>
+
+           
+            <div class="form-field">
+              <label for="designation">Designation</label>
+              <input id="designation"
+                     name="designation"
+                     [(ngModel)]="user().designation"
+                     required
+                     [disabled]="loading()"
+                     class="input-field"
+                     placeholder="Sales Manager"
+                     aria-required="true" />
+              <small class="help-text">Role in the organization (e.g., Sales Manager).</small>
+            </div>
+
+            <div class="form-field">
+              <label for="email">Email</label>
+              <div class="input-group">
+                <span class="input-addon">&#64;</span>
+                <input id="email"
+                       name="email"
+                       type="email"
+                       [(ngModel)]="user().email"
+                       required
+                       email
+                       [disabled]="loading() || isEditMode()"
+                       class="input-field"
+                       placeholder="john.doe@stylox.com"
+                       aria-required="true" />
+              </div>
+              <small class="help-text">
+                Email is {{ isEditMode() ? 'locked in edit mode' : 'required for account creation' }}.
+              </small>
+            </div>
+
+           
+            @if (!isEditMode()) {
+              <div class="form-field">
+                <label for="password">Password</label>
+                <input id="password"
+                       name="password"
+                       type="password"
+                       [(ngModel)]="user().password"
+                       required
+                       minlength="6"
+                       [disabled]="loading()"
+                       class="input-field"
+                       placeholder="Minimum 6 characters"
+                       aria-required="true" />
+                <div class="meter">
+                  <div class="bar" [style.width]="(user()?.password?.length || 0) * 12 + '%'" ></div>
+                </div>
+                <small class="help-text">Set a temporary password; the user can change it later.</small>
+              </div>
+            }
+          </div>
+        </section>
+
+  
+        <section class="shopify-card">
+          <div class="card-header">
+            <div class="card-title">Assign Roles</div>
+            <p class="card-subtitle">Grant access to specific modules.</p>
+          </div>
+
+          <div class="roles-toolbar">
+            <div class="hint">Tip: You can select multiple roles.</div>
+          </div>
+
+          <div class="roles-tags-wrap">
+            @for (role of availableRoles; track role) {
+              <label class="role-tag"
+                     [class.active]="user().roles.includes(role)"
+                     [for]="'role-' + role">
+                <input type="checkbox"
+                       class="visually-hidden"
+                       [id]="'role-' + role"
+                       [value]="role"
+                       [checked]="user().roles.includes(role)"
+                       (change)="onRoleChange(role, $event)"
+                       [disabled]="loading()">
+                <span class="dot"></span>
+                <span>{{ role }}</span>
+              </label>
+            }
+          </div>
+        </section>
+      </div>
+
+    
+      <aside class="form-sidebar">
+        <section class="shopify-card sticky-card">
+          <div class="card-header">
+            <div class="card-title">Account & Access</div>
+          </div>
+
+          <div class="form-field status-toggle">
+            <label class="toggle-switch">
+              <input type="checkbox"
+                     name="isActive"
+                     [(ngModel)]="user().isActive"
+                     [disabled]="loading()">
+              <span class="slider round"></span>
+            </label>
+            <span class="toggle-label">{{ user().isActive ? 'User is Active' : 'User is Inactive' }}</span>
+          </div>
+
+       
+          <div class="policy-note">
+            <span class="badge">Policy</span>
+            Deactivate users to immediately revoke access without deleting data.
+          </div>
+
+       
+          <div class="mini-summary">
+            <div class="ms-row">
+              <span>Email</span>
+              <strong class="truncate">{{ user().email || '—' }}</strong>
+            </div>
+            <div class="ms-row">
+              <span>Roles</span>
+              <strong>{{ user().roles?.length || 0 }}</strong>
+            </div>
+            <div class="ms-row">
+              <span>Status</span>
+              <strong [class.ok]="user().isActive" [class.muted]="!user().isActive">
+                {{ user().isActive ? 'Active' : 'Inactive' }}
+              </strong>
+            </div>
+          </div>
+
+          <button type="submit" class="submit-btn w-100" [disabled]="userForm.invalid || loading()">
+            <span class="btn-text">{{ loading() ? 'Processing...' : (isEditMode() ? 'Update User' : 'Create User') }}</span>
+            @if (loading()) { <span class="btn-loader"></span> }
+          </button>
+        </section>
+      </aside>
+    </div>
+
+
+    @if (error()) {
+      <div class="error-message">{{ error() }}</div>
+    }
+
+    <div class="sticky-actions">
+      <div class="sticky-inner">
+        <div class="hint">
+          @if (userForm.invalid) {
+            <span class="hint-badge">Complete required fields</span>
+          } @else {
+            <span class="hint-muted">Ready to {{ isEditMode() ? 'update' : 'create' }} this user</span>
+          }
+        </div>
+        <button type="submit" class="submit-btn" [disabled]="userForm.invalid || loading()" >
+          <span class="btn-text">{{ loading() ? 'Processing...' : (isEditMode() ? 'Update User' : 'Create User') }}</span>
+          @if (loading()) { <span class="btn-loader"></span> }
+        </button>
+      </div>
+    </div>
+  </form>
+</div> -->
+
+
 <div class="add-user-wrap">
   <form #userForm="ngForm" (ngSubmit)="onSubmit(userForm)" class="user-form" novalidate>
     

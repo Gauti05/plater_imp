@@ -1,0 +1,201 @@
+.page-container {
+  font-family: 'Inter', sans-serif;
+  color: #1A1D23;
+}
+
+.form-layout {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 24px;
+  align-items: flex-start;
+}
+
+.main-column { display: flex; flex-direction: column; gap: 24px; }
+.side-column { display: flex; flex-direction: column; gap: 24px; }
+
+.card {
+  background: #fff;
+  border: 1px solid #E5E7EB;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+
+.section-title, .card-title {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 16px;
+  color: #374151;
+  border-bottom: 1px solid #E5E7EB;
+  padding-bottom: 8px;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.form-group { display: flex; flex-direction: column; gap: 6px; }
+
+.form-label {
+  font-size: 14px;
+  font-weight: 500;
+  color: #4B5563;
+}
+
+.form-input, .form-select, textarea.form-input {
+  padding: 8px 10px;
+  border: 1px solid #D1D5DB;
+  border-radius: 6px;
+  font-size: 14px;
+  background: #F9FAFB;
+}
+
+.form-input.small {
+  width: 80px;
+  text-align: center;
+}
+
+textarea.form-input {
+  min-height: 60px;
+  resize: vertical;
+}
+
+/* Table */
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.data-table th, .data-table td {
+  border: 1px solid #E5E7EB;
+  padding: 8px;
+  font-size: 14px;
+  vertical-align: middle;
+}
+.data-table th {
+  background: #F3F4F6;
+  text-align: left;
+}
+
+/* Badges */
+.badge {
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+.badge-success { background: #D1FAE5; color: #065F46; }
+.badge-warning { background: #FEF3C7; color: #92400E; }
+.badge-secondary { background: #E5E7EB; color: #374151; }
+
+/* Timeline */
+.timeline {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.timeline li {
+  position: relative;
+  padding-left: 20px;
+  margin-bottom: 10px;
+  font-size: 14px;
+  color: #6B7280;
+}
+.timeline li::before {
+  content: '';
+  position: absolute;
+  top: 6px;
+  left: 0;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #D1D5DB;
+}
+.timeline li.done {
+  color: #065F46;
+  font-weight: 600;
+}
+.timeline li.done::before {
+  background: #10B981;
+}
+
+/* Buttons */
+.btn {
+  padding: 8px 14px;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+}
+.btn-block { width: 100%; margin-bottom: 10px; }
+
+.btn-primary { background: #2563EB; color: white; }
+.btn-success { background: #059669; color: white; }
+.btn-danger { background: #DC2626; color: white; }
+.btn-secondary { background: #E5E7EB; color: #111827; }
+.btn-tertiary { background: #F9FAFB; border: 1px solid #D1D5DB; color: #111827; }
+.btn-outline { background: transparent; border: 1px solid #D1D5DB; color: #111827; }
+
+.btn-small { padding: 4px 8px; font-size: 12px; }
+
+/* Modal */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(9, 11, 14, 0.45);
+  z-index: 999;
+}
+.modal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 1000;
+  width: 420px;
+  max-width: calc(100% - 32px);
+  background: #fff;
+  border-radius: 10px;
+  padding: 20px;
+  box-shadow: 0 14px 30px rgba(2,6,23,0.2);
+}
+.modal h3 { margin-top: 0; }
+.modal .modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 16px; }
+
+/* Toasts */
+.toast-container {
+  position: fixed;
+  top: 18px;
+  right: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  z-index: 1100;
+}
+.toast {
+  min-width: 220px;
+  max-width: 360px;
+  background: #111827;
+  color: white;
+  padding: 10px 12px;
+  border-radius: 8px;
+  box-shadow: 0 6px 18px rgba(2,6,23,0.16);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+.toast.success { background: #065F46; }
+.toast.error { background: #7A1220; }
+.toast.info { background: #0F172A; }
+.toast .toast-text { flex: 1; font-size: 14px; }
+.toast .toast-close { background: transparent; color: rgba(255,255,255,0.9); border: none; cursor: pointer; font-size: 13px; }
+
+@media (max-width: 900px) {
+  .form-layout { grid-template-columns: 1fr; }
+  .modal { width: 92%; }
+}

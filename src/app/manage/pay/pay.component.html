@@ -1,0 +1,68 @@
+<div class="payroll-dashboard">
+  
+  <div class="header">
+    <h2>Restaurant Staff Payroll</h2>
+    <button class="btn btn-primary">🖨️ Export Report</button>
+  </div>
+
+  <div class="summary-cards">
+    <div class="card card-blue">
+      <p class="card-title">Total Payroll Est.</p>
+      <h3 class="card-value">{{ totalPayroll | currency:'INR':'symbol' }}</h3>
+    </div>
+
+    <div class="card card-green">
+      <p class="card-title">Total Tips Distributed</p>
+      <h3 class="card-value">{{ totalTips | currency:'INR':'symbol' }}</h3>
+    </div>
+
+    <div class="card card-orange">
+      <p class="card-title">Pending Payments</p>
+      <h3 class="card-value">{{ pendingCount }} Staff</h3>
+    </div>
+  </div>
+
+  <div class="table-container">
+    <table class="custom-table">
+      <thead>
+        <tr>
+          <th>Staff Name</th>
+          <th>Role</th>
+          <th>Hours</th>
+          <th>Base Pay</th>
+          <th>Tips</th>
+          <th>Deductions</th>
+          <th>Net Pay</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let staff of staffRecords">
+          <td><strong>{{ staff.name }}</strong></td>
+          <td class="text-muted">{{ staff.role }}</td>
+          <td>{{ staff.hoursWorked }}h</td>
+          <td>{{ (staff.hoursWorked * staff.hourlyRate) | currency:'INR':'symbol' }}</td>
+          <td class="text-success">+{{ staff.tips | currency:'INR':'symbol' }}</td>
+          <td class="text-danger">-{{ staff.deductions | currency:'INR':'symbol' }}</td>
+          <td class="fw-bold">{{ staff.netPay | currency:'INR':'symbol' }}</td>
+          <td>
+            <span class="badge" [ngClass]="staff.status.toLowerCase()">
+              {{ staff.status }}
+            </span>
+          </td>
+          <td class="actions-cell">
+            <button class="btn btn-icon btn-outline" title="View Payslip">📄</button>
+            <button class="btn btn-icon btn-success" 
+                    *ngIf="staff.status === 'Pending'" 
+                    (click)="markAsPaid(staff.id)" 
+                    title="Mark as Paid">
+              ✅
+            </button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+</div>

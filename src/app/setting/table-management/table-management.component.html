@@ -1,0 +1,97 @@
+<div class="table-management-wrapper">
+  <div class="header-row">
+    <div><h2 class="page-title">Table Management</h2></div>
+    <button class="btn primary add-table-btn" (click)="openSidebar()">+ Add Table</button>
+  </div>
+
+  <div class="floor-layout wood-theme">
+    @if (tables.length > 0) {
+      <div class="table-grid">
+        @for (table of tables; track table.id) {
+          <div class="table-visual table-{{ table.status }}" (click)="editTable(table)">
+            <div class="table-circle"
+                 [style.border-color]="getStatusColor(table)"
+                 [style.box-shadow]="getShadowForStatus(table)">
+              <div class="chairs" [style.--chairs]="table.capacity">
+                @for (c of [].constructor(table.capacity); track $index) {
+                  <div class="chair" [style.--index]="$index"></div>
+                }
+              </div>
+              <div class="table-number">T{{ table.number }}</div>
+            </div>
+            <div class="table-status">
+              {{ table.status | titlecase }}
+              @if (table.capacity) { <span>({{ table.capacity }} seats)</span> }
+            </div>
+          </div>
+        }
+      </div>
+    } @else {
+      <p class="empty-state">No tables yet. Click “Add Table” to create one.</p>
+    }
+  </div>
+
+  <div class="drawer" [class.open]="sidebarOpen">
+    <div class="drawer-header">
+      <h3>{{ isEditing ? 'Edit Table' : 'Add New Table' }}</h3>
+      <button class="close-btn" (click)="closeSidebar()">×</button>
+    </div>
+
+    <div class="drawer-body">
+      <div class="form-group">
+        <label for="table-number">Table Number</label>
+        <input id="table-number" type="number" name="tableNumber" [(ngModel)]="form.number" />
+      </div>
+
+      <div class="form-group">
+        <label for="table-capacity">Capacity</label>
+        <input id="table-capacity" type="number" name="tableCapacity" [(ngModel)]="form.capacity" min="1" max="12" />
+      </div>
+
+      <div class="form-group">
+        <label for="table-status">Status</label>
+        <select id="table-status" name="tableStatus" [(ngModel)]="form.status">
+          <option value="available">🟢 Available</option>
+          <option value="occupied">🔴 Occupied</option>
+          <option value="reserved">🟡 Reserved</option>
+        </select>
+      </div>
+
+   @if (form.number && storeSlug) {
+        <div class="qr-section">
+          <label>Table QR Code</label>
+          <div class="qr-container">
+            <qrcode
+              [qrdata]="getQrData(form.number)"
+              [width]="200"
+              [errorCorrectionLevel]="'H'" 
+              [margin]="2"
+              [colorDark]="'#000000'"
+              [colorLight]="'#ffffff'"
+              [imageSrc]="'https://platter.bizzeazy.com/logo.jpg'"
+              [imageHeight]="50"
+              [imageWidth]="50"
+            ></qrcode>
+          </div>
+          
+          <p class="qr-link">{{ getQrData(form.number) }}</p>
+          
+          <button class="btn outline full" (click)="downloadQrCode(form.number)">
+            ⬇ Download QR Code
+          </button>
+        </div>
+      }
+      <div style="margin-top: 20px;">
+        <button class="btn primary full create-btn" (click)="saveTable()" [disabled]="loading || !form.number || !form.capacity">
+          {{ loading ? 'Saving...' : isEditing ? 'Update Table' : 'Create Table' }}
+        </button>
+      </div>
+
+      @if (successMessage) {
+        <p class="success-msg">{{ successMessage }}</p>
+      }
+    </div>
+  </div>
+
+  <div class="overlay" [class.show]="sidebarOpen" (click)="closeSidebar()"></div>
+</div>

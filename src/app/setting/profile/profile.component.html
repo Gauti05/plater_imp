@@ -1,0 +1,145 @@
+<div class="profile-wrapper">
+  <div class="profile-layout">
+    <!-- LEFT COLUMN (Editable Info) -->
+    <div class="left-column">
+      <div class="card">
+        <h3 class="card-title">Business Details</h3>
+        <div class="form-grid">
+          <div class="form-group half">
+            <label>Email</label>
+            <input type="email" [(ngModel)]="restaurant.email" placeholder="example@domain.com" />
+          </div>
+
+          <div class="form-group half">
+            <label>Phone</label>
+            <input type="text" [(ngModel)]="restaurant.phone" placeholder="+91 98765 43210" />
+          </div>
+
+          <div class="form-group full">
+            <label>GST Number</label>
+            <input type="text" [(ngModel)]="restaurant.gstNumber" placeholder="Enter GSTIN" />
+          </div>
+
+          <div class="form-group full">
+            <label>Address</label>
+            <textarea rows="2" [(ngModel)]="restaurant.address" placeholder="Full address"></textarea>
+          </div>
+
+          <div class="form-group half">
+            <label>City</label>
+            <input type="text" [(ngModel)]="restaurant.city" placeholder="City" />
+          </div>
+
+          <div class="form-group half">
+            <label>State</label>
+            <input type="text" [(ngModel)]="restaurant.state" placeholder="State" />
+          </div>
+
+          <div class="form-group half">
+            <label>Pincode</label>
+            <input type="text" [(ngModel)]="restaurant.pincode" placeholder="PIN Code" />
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3 class="card-title">Operating Hours</h3>
+        <div class="form-grid">
+          <div class="form-group half">
+            <label>Opening Time</label>
+            <input type="time" [(ngModel)]="restaurant.openingTime" />
+          </div>
+          <div class="form-group half">
+            <label>Closing Time</label>
+            <input type="time" [(ngModel)]="restaurant.closingTime" />
+          </div>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button class="btn primary" [disabled]="loading" (click)="saveProfile()">
+          {{ loading ? 'Saving...' : 'Save Changes' }}
+        </button>
+
+        @if (successMessage) {
+          <span class="success-msg">{{ successMessage }}</span>
+        }
+      </div>
+    </div>
+
+    <!-- RIGHT COLUMN (Non-editable System Info + Logo) -->
+    <div class="right-column">
+      <div class="card">
+        <h3 class="card-title">Brand Logo</h3>
+
+        @if (restaurant.logoUrl) {
+          <div class="logo-preview">
+            <img [src]="restaurant.logoUrl" alt="Restaurant Logo" />
+          </div>
+        } @else {
+          <div class="upload-placeholder">No logo uploaded</div>
+        }
+
+        <label class="upload-btn">
+          <input type="file" accept="image/*" (change)="onLogoChange($event)" hidden />
+          Upload Logo
+        </label>
+      </div>
+
+      <div class="card">
+        <h3 class="card-title">Store Information</h3>
+
+        <div class="meta-item">
+          <span class="meta-label">Name:</span>
+          <span class="meta-value">{{ restaurant.name }}</span>
+        </div>
+
+        <div class="meta-item">
+          <span class="meta-label">Slug:</span>
+          <span class="meta-value">{{ restaurant.slug }}</span>
+        </div>
+
+        <div class="meta-item">
+          <span class="meta-label">Admin UID:</span>
+          <span class="meta-value">{{ restaurant.adminUid }}</span>
+        </div>
+
+        <div class="meta-item">
+          <span class="meta-label">Created By:</span>
+          <span class="meta-value">{{ restaurant.createdBy }}</span>
+        </div>
+
+        <div class="meta-item">
+          <span class="meta-label">Created At:</span>
+          <span class="meta-value">
+            {{ restaurant.createdAt?.toDate ? (restaurant.createdAt.toDate() | date:'medium') : (restaurant.createdAt | date:'medium') }}
+          </span>
+        </div>
+
+        <div class="meta-item">
+          <span class="meta-label">Plan:</span>
+          <span class="meta-value">{{ restaurant.plan }}</span>
+        </div>
+
+        <div class="meta-item">
+          <span class="meta-label">Plan Expiry:</span>
+          <span class="meta-value">
+            {{ restaurant.planExpiry?.toDate ? (restaurant.planExpiry.toDate() | date:'mediumDate') : (restaurant.planExpiry | date:'mediumDate') }}
+          </span>
+        </div>
+
+        <div class="meta-item">
+          <span class="meta-label">License Key:</span>
+          <span class="meta-value">{{ restaurant.licenseKey }}</span>
+        </div>
+
+        <div class="meta-item">
+          <span class="meta-label">Status:</span>
+          <span class="meta-value" [class.active]="restaurant.isActive">
+            {{ restaurant.isActive ? 'Active' : 'Inactive' }}
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

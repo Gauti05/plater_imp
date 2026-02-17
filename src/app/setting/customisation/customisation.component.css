@@ -1,0 +1,189 @@
+.customisation-wrapper {
+ 
+  margin: 0 auto;
+ 
+}
+
+.page-title {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.page-subtitle {
+  color: var(--text-muted);
+  font-size: 14px;
+  margin-bottom: 24px;
+}
+
+.customisation-layout {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 24px;
+}
+
+/* CARD */
+.card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 20px;
+  box-shadow: var(--shadow-sm);
+}
+
+.card-title {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 16px;
+  color: var(--text-main);
+}
+
+/* FORM GRID */
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+
+.form-group.full {
+  grid-column: span 2;
+}
+
+.form-group label {
+  display: block;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+}
+
+.form-group input,
+.form-group textarea {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  transition: border-color 0.2s;
+}
+
+.form-group input:focus,
+.form-group textarea:focus {
+  border-color: var(--primary);
+  outline: none;
+}
+
+/* CHECKBOXES */
+.checkbox-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.checkbox-item {
+  position: relative;
+  padding-left: 28px;
+  cursor: pointer;
+  font-size: 14px;
+  color: var(--text-main);
+  user-select: none;
+}
+
+.checkbox-item input {
+  position: absolute;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.checkmark {
+  position: absolute;
+  left: 0;
+  top: 2px;
+  height: 18px;
+  width: 18px;
+  background-color: #f3f4f6;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.checkbox-item:hover .checkmark {
+  background-color: #e5e7eb;
+}
+
+.checkbox-item input:checked ~ .checkmark {
+  background-color: var(--primary);
+  border-color: var(--primary);
+}
+
+.checkmark::after {
+  content: "";
+  position: absolute;
+  display: none;
+}
+
+.checkbox-item input:checked ~ .checkmark::after {
+  display: block;
+}
+
+.checkbox-item .checkmark::after {
+  left: 5px;
+  top: 1.5px;
+  width: 5px;
+  height: 9px;
+  border: solid #fff;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+/* PREVIEW */
+.preview-box {
+  height: 60px;
+  border-radius: var(--radius-md);
+  display: grid;
+  place-items: center;
+  color: white;
+  font-weight: 500;
+  margin-bottom: 12px;
+}
+
+.preview-box.dark {
+  background: #1f2937;
+}
+
+/* ACTIONS */
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.btn.primary {
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 10px 16px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background var(--transition);
+}
+
+.btn.primary:hover {
+  background: var(--primary-hover);
+}
+
+.success-msg {
+  color: var(--primary);
+  font-weight: 600;
+  font-size: 14px;
+}
+
+/* RESPONSIVE */
+@media (max-width: 900px) {
+  .customisation-layout {
+    grid-template-columns: 1fr;
+  }
+}

@@ -1,0 +1,90 @@
+<div class="page-container">
+  <div class="form-layout">
+    <div class="main-column">
+      <section class="card">
+        <h3 class="section-title">General Information</h3>
+        <div class="form-grid">
+          <div class="form-group">
+            <label class="form-label">Supplier Name</label>
+            <input type="text" [(ngModel)]="supplier.name" class="form-input" placeholder="Enter supplier name" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Contact Person</label>
+            <input type="text" [(ngModel)]="supplier.contactName" class="form-input" placeholder="Enter contact person" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Phone</label>
+            <input type="text" [(ngModel)]="supplier.phone" class="form-input" placeholder="Enter phone number" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Email</label>
+            <input type="email" [(ngModel)]="supplier.email" class="form-input" placeholder="Enter email address" />
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Address</label>
+          <textarea [(ngModel)]="supplier.address" class="form-input" placeholder="Enter address"></textarea>
+        </div>
+      </section>
+
+      <section class="card">
+        <h3 class="section-title">Associated Items</h3>
+
+        <div class="form-group">
+          <input type="text" [(ngModel)]="searchTerm" (input)="filterItems()" class="form-input" placeholder="Search items to associate..." />
+        </div>
+
+        @if (filteredItems.length) {
+          <div class="chip-container">
+            @for (item of filteredItems; track item.id) {
+              <div
+                class="chip"
+                [class.selected]="supplier.associatedItems.includes(item.id!)"
+                (click)="toggleItem(item.id!)">
+                {{ item.name }}
+                <span class="muted">({{ item.type }})</span>
+              </div>
+            }
+          </div>
+        } @else {
+          <div class="muted" style="padding: 10px;">
+            @if (searchTerm.length > 0) {
+              No items found matching "{{ searchTerm }}".
+            } @else if (supplier.associatedItems.length > 0) {
+              All **{{ supplier.associatedItems.length }}** associated items are shown. Use the search bar to find and add more.
+            } @else {
+              Search for Raw Materials or Menu Items to associate them with this supplier.
+            }
+          </div>
+        }
+      </section>
+    </div>
+
+    <aside class="side-column">
+      <div class="card">
+        <h4 class="card-title">Status</h4>
+        <div class="status-indicator">
+          <div class="form-toggle">
+            <label class="switch">
+              <input type="checkbox" [(ngModel)]="supplier.isActive" />
+              <span class="slider"></span>
+            </label>
+            <span class="status-label">{{ supplier.isActive ? 'Active' : 'Inactive' }}</span>
+          </div>
+        </div>
+        <div class="status-notes">
+          This supplier is {{ supplier.isActive ? 'enabled and can be used for purchases.' : 'disabled and won’t appear in supplier lists.' }}
+        </div>
+      </div>
+
+      <div class="card card-actions-block">
+        <button class="btn btn-primary btn-block" (click)="saveSupplier()">
+          Save
+        </button>
+        <button class="btn btn-secondary btn-block" (click)="router.navigate(['/', storeSlug, 'inventory', 'suppliers'])">
+          Back
+        </button>
+      </div>
+    </aside>
+  </div>
+</div>

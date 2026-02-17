@@ -1,0 +1,75 @@
+<div class="selector-shell">
+  <div class="page-header">
+    <div class="title-wrap">
+      <h1>Outlets Control Center</h1>
+      <p class="muted">Manage operational status across all your locations.</p>
+    </div>
+    <button class="btn primary w-auto">+ Add Outlet</button>
+  </div>
+
+  @if (loading) {
+    <div class="loading-state"><div class="spinner"></div></div>
+  } @else {
+    <div class="store-grid">
+      @for (store of stores; track store.id) {
+        <div class="store-card card" [class.offline]="!store.isActive">
+          <div class="card-body">
+            <div class="store-header">
+              <h2 class="store-name">{{ store.name }}</h2>
+              <span class="badge" [class.active]="store.isActive" [class.inactive]="!store.isActive">
+                {{ store.isActive ? 'Online' : 'Offline' }}
+              </span>
+            </div>
+            
+            <div class="code-pill">ID: {{ store.outletCode || store.slug }}</div>
+
+            <div class="ops-control-grid">
+              <div class="op-row">
+                <div class="op-info">
+                  <span class="op-title">Master Switch</span>
+                  <span class="op-sub">Store visibility</span>
+                </div>
+                <label class="switch">
+                  <input type="checkbox" [checked]="store.isActive" (change)="toggleSetting(store, 'isActive')">
+                  <span class="slider"></span>
+                </label>
+              </div>
+
+              <div class="op-row" [style.opacity]="store.isActive ? '1' : '0.5'">
+                <span class="op-title">Dine-in</span>
+                <label class="switch">
+                  <input type="checkbox" [disabled]="!store.isActive" [checked]="store.dineInEnabled" (change)="toggleSetting(store, 'dineInEnabled')">
+                  <span class="slider"></span>
+                </label>
+              </div>
+
+              <div class="op-row" [style.opacity]="store.isActive ? '1' : '0.5'">
+                <span class="op-title">Takeaway</span>
+                <label class="switch">
+                  <input type="checkbox" [disabled]="!store.isActive" [checked]="store.takeawayEnabled" (change)="toggleSetting(store, 'takeawayEnabled')">
+                  <span class="slider"></span>
+                </label>
+              </div>
+
+              <div class="op-row" [style.opacity]="store.isActive ? '1' : '0.5'">
+                <span class="op-title">Ordering</span>
+                <label class="switch">
+                  <input type="checkbox" [disabled]="!store.isActive" [checked]="store.orderingEnabled" (change)="toggleSetting(store, 'orderingEnabled')">
+                  <span class="slider"></span>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <div class="card-footer">
+            <button class="btn primary" (click)="enterStore(store)">Enter Dashboard →</button>
+            <div class="action-group">
+              <button class="btn secondary tiny">Edit Info</button>
+              <button class="btn ghost tiny danger">Delete</button>
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+  }
+</div>

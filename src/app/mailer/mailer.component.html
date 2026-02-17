@@ -1,0 +1,180 @@
+<div class="bulk-mail-container">
+  <div class="content-wrapper">
+    
+    <header class="main-header">
+      <div>
+        <h1 class="app-title">BulkMail Pro</h1>
+        <p class="app-subtitle">Marketing Campaign Manager</p>
+      </div>
+      <div class="status-wrapper">
+        <span class="status-badge">
+          Status: {{ isSending() ? 'Sending...' : 'Idle' }}
+        </span>
+      </div>
+    </header>
+
+    <div class="main-grid">
+      
+      <div class="left-column">
+        
+        <div class="card">
+          <div class="card-header-row">
+            <label class="label-text">Recipients (CSV or Newline)</label>
+            <span class="count-badge">
+              {{ validRecipientsCount() }} Valid Emails
+            </span>
+          </div>
+          <textarea 
+            [(ngModel)]="rawRecipients"
+            (ngModelChange)="parseRecipients()"
+            [disabled]="isSending()"
+            class="form-control text-area-recipients"
+            placeholder="john@example.com, jane@example.com&#10;user@domain.com"></textarea>
+          <div class="card-footer-right">
+            <button (click)="clearRecipients()" [disabled]="isSending()" class="btn-text">
+              Clear List
+            </button>
+          </div>
+        </div>
+
+        <div class="card space-y-md">
+          <div class="form-group">
+            <label class="label-text">Subject Line</label>
+            <input 
+              type="text" 
+              [(ngModel)]="subject"
+              [disabled]="isSending()"
+              class="form-control"
+              placeholder="e.g., Exclusive Offer Inside!">
+          </div>
+
+          <div class="form-group">
+            <label class="label-text">
+              Email Body 
+              <span class="sub-label">(HTML supported)</span>
+            </label>
+            <textarea 
+              [(ngModel)]="body"
+              [disabled]="isSending()"
+              class="form-control text-area-body"
+              placeholder="<h1>Hello!</h1><p>Write your marketing content here...</p>"></textarea>
+            <p class="helper-text">
+              Tip: Use HTML tags for formatting.
+            </p>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="right-column">
+        
+        <div class="card sticky-card">
+          <h2 class="card-title">Campaign Controls</h2>
+          
+          @if (totalToSend() > 0) {
+            <div class="progress-section">
+              <div class="progress-labels">
+                <span>Progress</span>
+                <span>{{ progressPercentage() }}%</span>
+              </div>
+              <div class="progress-track">
+                <div class="progress-fill" [style.width.%]="progressPercentage()"></div>
+              </div>
+              <div class="progress-stats">
+                <span>Sent: {{ sentCount() }}</span>
+                <span>Failed: {{ failedCount() }}</span>
+              </div>
+            </div>
+          }
+
+          <div class="action-buttons">
+            <button 
+              (click)="startCampaign()" 
+              [disabled]="isSending() || validRecipientsCount() === 0 || !subject"
+              class="btn-primary">
+              
+              @if (!isSending()) {
+                <span class="btn-content">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                    <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" />
+                  </svg>
+                  Send Campaign
+                </span>
+              } @else {
+                <span class="btn-content">
+                  <svg class="spinner" viewBox="0 0 50 50">
+                    <circle cx="25" cy="25" r="20" fill="none" stroke="currentColor" stroke-width="5"></circle>
+                  </svg>
+                  Processing...
+                </span>
+              }
+            </button>
+
+            @if (isSending()) {
+              <button 
+                (click)="stopCampaign()"
+                class="btn-secondary">
+                Stop
+              </button>
+            }
+          </div>
+
+          <div class="notice-box">
+            @if (USE_REAL_EMAIL) {
+              <p><strong>Mode: Real Email (EmailJS)</strong><br>Emails will be sent using your configured service.</p>
+            } @else {
+              <p><strong>Mode: Simulation</strong><br>Testing UI only. No emails are actually sent.</p>
+            }
+          </div>
+
+        </div>
+
+        <div class="card log-card">
+          <div class="log-header">
+            <h3 class="log-title">Live Logs</h3>
+            <button (click)="clearLogs()" class="btn-link">Clear</button>
+          </div>
+          
+          <div class="log-body" #logContainer>
+            
+            @if (logs.length === 0) {
+              <div class="empty-state">
+                <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                <p>No activity yet. Start a campaign to see logs.</p>
+              </div>
+            } @else {
+              <table class="log-table">
+                <thead>
+                  <tr>
+                    <th>Email</th>
+                    <th>Status</th>
+                    <th class="text-right">Time</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (log of logs; track $index) {
+                    <tr>
+                      <td class="email-col" title="{{log.email}}">{{ log.email }}</td>
+                      <td>
+                        <span class="status-pill {{ log.status }}">
+                          {{ log.status }}
+                        </span>
+                      </td>
+                      <td class="text-right time-col">
+                        {{ log.timestamp | date:'mediumTime' }}
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            }
+
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>

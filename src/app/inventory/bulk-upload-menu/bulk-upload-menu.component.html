@@ -1,0 +1,50 @@
+<div class="upload-container">
+  <h2>📤 Bulk Upload Menu Items</h2>
+
+  <div class="upload-box">
+    <label for="csvFile">Select CSV File:</label>
+    <input type="file" accept=".csv" (change)="handleFileChange($event)" />
+  </div>
+
+  <div class="actions">
+    <button class="btn" (click)="parseCSV()" [disabled]="!csvFile">Parse CSV</button>
+    <button class="btn-primary" (click)="uploadToFirestore()" [disabled]="!parsedData.length || uploading">
+      {{ uploading ? 'Uploading...' : 'Upload to Firestore' }}
+    </button>
+    <button class="btn-secondary" (click)="backToList()">← Back to Menu List</button>
+  </div>
+
+  @if (parsedData.length > 0) {
+    <section class="preview">
+      <h3>✅ Parsed {{ parsedData.length }} Records</h3>
+      <table class="preview-table">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Category</th>
+            <th>Price (₹)</th>
+            <th>Status</th>
+            <th>Inventory Tracking</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (row of parsedData; track row) {
+            <tr>
+              <td>{{ row['Name'] }}</td>
+              <td>{{ row['Category'] }}</td>
+              <td>{{ row['Price (₹)'] }}</td>
+              <td>{{ row['Status'] }}</td>
+              <td>{{ row['Inventory Tracking'] }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </section>
+  }
+
+  @if (uploadSummary) {
+    <div class="summary-box">
+      <pre>{{ uploadSummary }}</pre>
+    </div>
+  }
+</div>

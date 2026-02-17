@@ -1,0 +1,34 @@
+<div class="inventory-container">
+  <div class="icon-nav">
+  <button class="nav-item"
+        routerLink="."
+        routerLinkActive="active"
+        [routerLinkActiveOptions]="{ exact: true }">
+  <span class="material-icons">dashboard</span><span>Dashboard</span>
+</button>
+    <button class="nav-item" routerLink="raw-materials" routerLinkActive="active">
+      <span class="material-icons">inventory_2</span><span>Raw Materials</span>
+    </button>
+    <button class="nav-item" routerLink="menu-items" routerLinkActive="active">
+      <span class="material-icons">restaurant_menu</span><span>Menu Items</span>
+    </button>
+    <button class="nav-item" routerLink="modifiers" routerLinkActive="active">
+      <span class="material-icons">tune</span><span>Modifiers</span>
+    </button>
+    <button class="nav-item" routerLink="suppliers" routerLinkActive="active">
+      <span class="material-icons">local_shipping</span><span>Suppliers</span>
+    </button>
+    <button class="nav-item" routerLink="purchase-orders" routerLinkActive="active">
+      <span class="material-icons">shopping_cart</span><span>Purchases</span>
+    </button>
+    <!-- <button class="nav-item" routerLink="stock-adjustments" routerLinkActive="active">
+      <span class="material-icons">edit</span><span>Adjustments</span>
+    </button>
+    <button class="nav-item" routerLink="reports" routerLinkActive="active">
+      <span class="material-icons">bar_chart</span><span>Reports</span>
+    </button> -->
+  </div>
+
+  <!-- 🟢 Child routes will render here -->
+  <router-outlet></router-outlet>
+</div>

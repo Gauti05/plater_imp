@@ -1,0 +1,127 @@
+<div class="marketing-dashboard">
+  
+  <div class="header-actions">
+    <div>
+      <h2>Marketing & CRM Hub</h2>
+      <p class="subtitle">Manage campaigns, track ROI, and engage customers.</p>
+    </div>
+    <div class="action-buttons">
+      <button class="btn btn-outline">Generate Promo Code</button>
+      <button class="btn btn-primary">➕ Create New Campaign</button>
+    </div>
+  </div>
+
+  <div class="kpi-grid">
+    <div class="kpi-card">
+      <div class="kpi-icon bg-purple">📢</div>
+      <div class="kpi-details">
+        <p>Total Audience Reached</p>
+        <h3>{{ totalAudienceReached | number }}</h3>
+      </div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-icon bg-green">₹</div>
+      <div class="kpi-details">
+        <p>Campaign Revenue</p>
+        <h3>{{ totalCampaignRevenue | currency:'INR':'symbol' }}</h3>
+      </div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-icon bg-orange">🏷️</div>
+      <div class="kpi-details">
+        <p>Active Promo Codes</p>
+        <h3>{{ activePromosCount }}</h3>
+      </div>
+    </div>
+  </div>
+
+  <div class="dashboard-grid">
+    
+    <div class="main-column">
+      <div class="card panel">
+        <div class="panel-header">
+          <h3>Recent Campaigns</h3>
+          <span class="view-all">View All</span>
+        </div>
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Campaign Name</th>
+              <th>Channel</th>
+              <th>Status</th>
+              <th>Conversion ROI</th>
+              <th>Revenue Generated</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let camp of campaigns">
+              <td>
+                <strong>{{ camp.name }}</strong><br>
+                <small class="text-muted">Target: {{ camp.audienceSize | number }} guests</small>
+              </td>
+              <td><span class="channel-tag">{{ camp.channel }}</span></td>
+              <td>
+                <span class="badge" [ngClass]="camp.status.toLowerCase()">{{ camp.status }}</span>
+              </td>
+              <td>
+                <div class="progress-wrapper">
+                  <div class="progress-info">
+                    <span>{{ getConversionRate(camp.conversions, camp.audienceSize) | number:'1.1-2' }}%</span>
+                    <span>{{ camp.conversions }} cvs</span>
+                  </div>
+                  <div class="progress-bar">
+                    <div class="progress-fill" [style.width.%]="getConversionRate(camp.conversions, camp.audienceSize)"></div>
+                  </div>
+                </div>
+              </td>
+              <td class="fw-bold text-success">{{ camp.revenueGenerated | currency:'INR':'symbol' }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="side-column">
+      
+      <div class="card panel mb-4">
+        <div class="panel-header">
+          <h3>Customer Segments</h3>
+        </div>
+        <div class="segment-list">
+          <div class="segment-item" *ngFor="let seg of segments">
+            <div class="seg-info">
+              <span class="dot" [ngClass]="seg.color"></span>
+              <span>{{ seg.name }}</span>
+            </div>
+            <span class="seg-count">{{ seg.count | number }}</span>
+          </div>
+        </div>
+        <button class="btn btn-block btn-outline mt-3">Run Segment Report</button>
+      </div>
+
+      <div class="card panel">
+        <div class="panel-header">
+          <h3>Active Promo Codes</h3>
+        </div>
+        <div class="promo-list">
+          <div class="promo-card" *ngFor="let promo of promoCodes" [class.expired]="promo.status === 'Expired'">
+            <div class="promo-header">
+              <span class="promo-code">{{ promo.code }}</span>
+              <span class="badge" [ngClass]="promo.status.toLowerCase()">{{ promo.status }}</span>
+            </div>
+            <p class="promo-desc">
+              {{ promo.type === 'Flat' ? (promo.value | currency:'INR':'symbol') : promo.value + '%' }} OFF
+            </p>
+            <div class="promo-stats">
+              <small>Used: {{ promo.uses }}/{{ promo.maxUses }}</small>
+              <button class="toggle-btn" (click)="togglePromoStatus(promo)">
+                {{ promo.status === 'Active' ? 'Deactivate' : 'Activate' }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>

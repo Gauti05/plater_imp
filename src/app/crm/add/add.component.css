@@ -1,0 +1,64 @@
+:root {
+    --primary: #009245;
+    --bg-color: #f9fafb;
+    --text-dark: #1e293b;
+    --text-muted: #6b7280;
+    --card-bg: #ffffff;
+    --input-bg: #ffffff;
+    --border-color: #e1e3e5;
+    --radius: 8px;
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.04);
+    --font: 'Inter', sans-serif;
+  }
+  
+  body {
+    background-color: var(--bg-color);
+    font-family: var(--font);
+  }
+  
+  .shopify-card {
+    background-color: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-sm);
+    padding: 16px;
+    margin-bottom: 12px;
+  }
+  
+  .form-label {
+    font-weight: 500;
+    color: var(--text-dark);
+    margin-bottom: 6px;
+    font-size: 14px;
+  }
+  
+  input.form-control,
+  select.form-select,
+  textarea.form-control {
+    background-color: var(--input-bg);
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    padding: 6px 10px;
+    font-size: 14px;
+    color: var(--text-dark);
+  }
+  
+  input.form-control:focus,
+  select.form-select:focus,
+  textarea.form-control:focus {
+    border-color: var(--primary);
+    outline: none;
+    box-shadow: 0 0 0 0.15rem rgba(0, 146, 69, 0.1);
+  }
+  
+  .btn-primary {
+    background-color: var(--primary);
+    border-color: var(--primary);
+    font-size: 14px;
+    padding: 10px 20px;
+  }
+  
+  .btn-primary:disabled {
+    opacity: 0.7;
+  }
+  

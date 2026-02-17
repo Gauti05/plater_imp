@@ -1,0 +1,13 @@
+<app-dynamic-table
+  [data]="purchaseOrders"
+  [columns]="columns"
+  [filters]="filters"
+  [hasActions]="true"
+  [buttonLabel]="'Add Purchase Order'"
+  [buttonRoute]="'/' + storeSlug + '/inventory/add-purchase-order'"
+  [rowRouteBase]="'/' + storeSlug + '/inventory/edit-purchase-order'"
+  rowIdField="id"
+  (rowClick)="onRowClick($event)"
+  (filterChange)="onFilterChange($event)"
+  (bulkDelete)="handleDelete($event)"> 
+</app-dynamic-table>

@@ -1,0 +1,166 @@
+<div class="customisation-wrapper">
+  <div class="customisation-layout">
+    <!-- LEFT COLUMN -->
+    <div class="left-column">
+      <!-- BRAND & THEME -->
+      <div class="card">
+        <h3 class="card-title">Brand & Theme</h3>
+        <div class="form-grid">
+          <div class="form-group half">
+            <label>Primary Color</label>
+            <input type="color" [(ngModel)]="customisation.themeColor" />
+          </div>
+
+          <div class="form-group half">
+            <label>Accent Color</label>
+            <input type="color" [(ngModel)]="customisation.accentColor" />
+          </div>
+        </div>
+
+        <div class="checkbox-list">
+          <label class="checkbox-item">
+            <input type="checkbox" [(ngModel)]="customisation.darkMode" />
+            <span class="checkmark"></span>
+            Enable Dark Mode
+          </label>
+        </div>
+      </div>
+
+      <!-- RECEIPT SETTINGS -->
+      <div class="card">
+        <h3 class="card-title">Receipt Settings</h3>
+        <div class="form-grid">
+          <div class="form-group full">
+            <label>Header Text</label>
+            <input
+              type="text"
+              [(ngModel)]="customisation.receiptHeader"
+              placeholder="e.g. Thank you for visiting!"
+            />
+          </div>
+
+          <div class="form-group full">
+            <label>Footer Text</label>
+            <textarea
+              rows="2"
+              [(ngModel)]="customisation.receiptFooter"
+              placeholder="e.g. Visit again soon!"
+            ></textarea>
+          </div>
+        </div>
+
+        <div class="checkbox-list">
+          <label class="checkbox-item">
+            <input
+              type="checkbox"
+              [(ngModel)]="customisation.showLogoOnReceipt"
+            />
+            <span class="checkmark"></span>
+            Show Store Logo on Receipts
+          </label>
+        </div>
+      </div>
+
+      <!-- TAX SETTINGS -->
+      <div class="card">
+        <h3 class="card-title">Tax Settings</h3>
+        <div class="form-grid">
+          <div class="form-group half">
+            <label>Tax Name</label>
+            <input
+              type="text"
+              [(ngModel)]="customisation.taxName"
+              placeholder="e.g., GST"
+            />
+          </div>
+
+          <div class="form-group half">
+            <label>Tax Percentage (%)</label>
+            <input
+              type="number"
+              [(ngModel)]="customisation.taxPercentage"
+              min="0"
+              max="100"
+            />
+          </div>
+        </div>
+
+        <div class="checkbox-list">
+          <label class="checkbox-item">
+            <input
+              type="checkbox"
+              [(ngModel)]="customisation.taxInclusive"
+            />
+            <span class="checkmark"></span>
+            Prices include tax (Tax-Inclusive)
+          </label>
+        </div>
+      </div>
+
+      <!-- SAVE -->
+     
+    </div>
+
+    <!-- RIGHT COLUMN -->
+    <div class="right-column">
+      <!-- APP PREFERENCES -->
+      <div class="card">
+        <h3 class="card-title">App Preferences</h3>
+        <div class="checkbox-list">
+          <label class="checkbox-item">
+            <input type="checkbox" [(ngModel)]="customisation.enableDineIn" />
+            <span class="checkmark"></span>
+            Enable Dine-in Orders
+          </label>
+
+          <label class="checkbox-item">
+            <input type="checkbox" [(ngModel)]="customisation.enableTakeaway" />
+            <span class="checkmark"></span>
+            Enable Takeaway Orders
+          </label>
+
+          <label class="checkbox-item">
+            <input type="checkbox" [(ngModel)]="customisation.enableDelivery" />
+            <span class="checkmark"></span>
+            Enable Delivery Orders
+          </label>
+        </div>
+      </div>
+
+      <!-- THEME PREVIEW -->
+      <div class="card preview-card">
+        <h3 class="card-title">Theme Preview</h3>
+        <div
+          class="preview-box"
+          [style.background]="customisation.themeColor"
+        >
+          <p>Primary Color</p>
+        </div>
+        <div
+          class="preview-box"
+          [style.background]="customisation.accentColor"
+        >
+          <p>Accent Color</p>
+        </div>
+        @if (customisation.darkMode) {
+          <div class="preview-box dark">
+            <p>Dark Mode Preview</p>
+          </div>
+        }
+      </div>
+
+       <div class="actions">
+        <button
+          class="btn primary"
+          [disabled]="loading"
+          (click)="saveCustomisation()"
+        >
+          {{ loading ? 'Saving...' : 'Save Changes' }}
+        </button>
+        @if (successMessage) {
+          <span class="success-msg">{{ successMessage }}</span>
+        }
+      </div>
+    </div>
+  </div>
+</div>

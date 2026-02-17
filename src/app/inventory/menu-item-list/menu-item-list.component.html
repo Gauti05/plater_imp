@@ -1,0 +1,20 @@
+@if (isLoadingState) {
+  <div class="loading-state-message" style="text-align: center; padding: 50px; font-size: 1.2em; color: #64748b;">
+    Loading previous table settings...
+  </div>
+} @else {
+  <app-dynamic-table
+    [data]="menuItems"
+    [columns]="columns"
+    [filters]="filters"
+    [hasActions]="true" 
+    [buttonLabel]="'Add Menu Item'"
+    [buttonRoute]="'/' + storeSlug + '/inventory/add-menu'"
+    [rowRouteBase]="'/' + storeSlug + '/inventory/edit-menu'"
+    rowIdField="id"
+    [initialState]="tableState"
+    (stateChange)="saveTableState($event)"
+    (bulkDelete)="handleDelete($event)"
+    (rowClick)="onRowClick($event)">
+  </app-dynamic-table>
+}

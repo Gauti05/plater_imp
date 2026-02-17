@@ -1,0 +1,267 @@
+<div class="add-sales-wrap">
+  <form [formGroup]="salesForm" (ngSubmit)="onSubmit()" class="sales-form" novalidate>
+    <!-- Page Heading -->
+    <header class="page-head">
+      <div>
+        <h1 class="form-title">
+          {{ isEditMode ? 'View/Edit Sales Record' : 'Add Daily Sales' }}
+        </h1>
+        <p class="form-description">
+          {{ isEditMode ? 'Reconcile and view details of a paid order.' : 'Record daily performance in a clean, Shopify-style workflow.' }}
+        </p>
+      </div>
+
+      <!-- Quick Summary -->
+      <div class="quick-summary">
+        <div class="qs-item">
+          <div class="qs-label">Total Sales</div>
+          <div class="qs-value">₹ {{ salesForm.get('totalSales')?.value || 0 | number:'1.0-0' }}</div>
+        </div>
+        <div class="qs-item">
+          <div class="qs-label">Orders</div>
+          <div class="qs-value">{{ salesForm.get('totalOrders')?.value || 0 }}</div>
+        </div>
+        <div class="qs-item">
+          <div class="qs-label">AOV</div>
+          <div class="qs-value">
+            ₹ {{
+              (salesForm.get('totalSales')?.value && salesForm.get('totalOrders')?.value)
+                ? (salesForm.get('totalSales')?.value / (salesForm.get('totalOrders')?.value || 1))
+                : 0 | number:'1.2-2'
+            }}
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Content Grid -->
+    <div class="form-container">
+      <!-- LEFT: Main content -->
+      <div class="main-form-content">
+        <section class="shopify-card">
+          <div class="card-header">
+            <div class="card-title">Sales Data</div>
+            <p class="card-subtitle">Required daily sales metrics.</p>
+          </div>
+
+          <div class="form-grid">
+            <!-- Date -->
+            <div class="form-field">
+              <label for="date">Date</label>
+              <input
+                id="date"
+                type="date"
+                formControlName="date"
+                class="input-field"
+                [ngClass]="{ 'is-invalid': salesForm.get('date')?.invalid && (salesForm.get('date')?.touched || submitted) }"
+                aria-describedby="dateHelp"
+              />
+              @if (salesForm.get('date')?.invalid && (salesForm.get('date')?.touched || submitted)) {
+                <div class="error-message">Date is required.</div>
+              }
+              <small id="dateHelp" class="help-text">Choose the business date you’re recording for.</small>
+            </div>
+
+            <!-- Total Sales -->
+            <div class="form-field">
+              <label for="totalSales">Total Sales</label>
+              <div class="input-group">
+                <span class="input-addon">₹</span>
+                <input
+                  id="totalSales"
+                  type="number"
+                  inputmode="decimal"
+                  min="0"
+                  formControlName="totalSales"
+                  class="input-field"
+                  placeholder="Total revenue for the day"
+                  [ngClass]="{ 'is-invalid': salesForm.get('totalSales')?.invalid && (salesForm.get('totalSales')?.touched || submitted) }"
+                />
+              </div>
+              @if (salesForm.get('totalSales')?.invalid && (salesForm.get('totalSales')?.touched || submitted)) {
+                <div class="error-message">Total sales is required and must be a number.</div>
+              }
+              <small class="help-text">Gross sales for the selected date.</small>
+            </div>
+
+            <!-- Number of Orders -->
+            <div class="form-field">
+              <label for="totalOrders">Number of Orders</label>
+              <div class="input-group">
+                <span class="input-addon">#</span>
+                <input
+                  id="totalOrders"
+                  type="number"
+                  inputmode="numeric"
+                  min="0"
+                  formControlName="totalOrders"
+                  class="input-field"
+                  placeholder="Total number of orders"
+                  [ngClass]="{ 'is-invalid': salesForm.get('totalOrders')?.invalid && (salesForm.get('totalOrders')?.touched || submitted) }"
+                />
+              </div>
+              @if (salesForm.get('totalOrders')?.invalid && (salesForm.get('totalOrders')?.touched || submitted)) {
+                <div class="error-message">Number of orders is required and must be a number.</div>
+              }
+              <small class="help-text">All channels combined.</small>
+            </div>
+          </div>
+        </section>
+
+        <!-- Optional: Channel Split (collapsed visual style) -->
+        <section class="shopify-card">
+          <div class="card-header">
+            <div class="card-title">Channel Split</div>
+            <p class="card-subtitle">Breakdown of online vs offline (optional).</p>
+          </div>
+
+          <div class="form-grid">
+            <div class="form-field">
+              <label for="onlineSales">Online Sales</label>
+              <div class="input-group">
+                <span class="input-addon">₹</span>
+                <input
+                  id="onlineSales"
+                  type="number"
+                  inputmode="decimal"
+                  min="0"
+                  formControlName="onlineSales"
+                  class="input-field"
+                  placeholder="e.g., website, marketplaces"
+                />
+              </div>
+              <small class="help-text">If left blank, we’ll assume 0.</small>
+            </div>
+
+            <div class="form-field">
+              <label for="offlineSales">Offline Sales</label>
+              <div class="input-group">
+                <span class="input-addon">₹</span>
+                <input
+                  id="offlineSales"
+                  type="number"
+                  inputmode="decimal"
+                  min="0"
+                  formControlName="offlineSales"
+                  class="input-field"
+                  placeholder="e.g., retail store, events"
+                />
+              </div>
+              <small class="help-text">If left blank, we’ll assume 0.</small>
+            </div>
+          </div>
+        </section>
+
+        <!-- Order Details Section (visible only when editing) -->
+        @if (isEditMode && orderToRecord) {
+            <section class="shopify-card">
+                <div class="card-header">
+                    <div class="card-title">Order Details</div>
+                    <p class="card-subtitle">Details of the paid order being recorded.</p>
+                </div>
+                <div class="order-details-summary">
+                    <div class="detail-row">
+                        <span>Invoice No.:</span>
+                        <strong>#{{ orderToRecord.id }}</strong>
+                    </div>
+                    <div class="detail-row">
+                        <span>Table No.:</span>
+                        <strong>Table {{ orderToRecord.tableNumber }}</strong>
+                    </div>
+                    <div class="detail-row">
+                        <span>Items:</span>
+                        <ul>
+                            @for (item of orderToRecord.items; track item.name) {
+                                <li>{{ item.quantity }}x {{ item.name }}</li>
+                            }
+                        </ul>
+                    </div>
+                    <div class="detail-row">
+                        <span>Payment Mode:</span>
+                        <strong>{{ orderToRecord.paymentMode || '—' }}</strong>
+                    </div>
+                </div>
+            </section>
+        }
+      </div>
+
+      <!-- RIGHT: Sticky sidebar -->
+      <aside class="form-sidebar">
+        <section class="shopify-card sticky-card">
+          <div class="card-header">
+            <div class="card-title">Notes</div>
+            <p class="card-subtitle">Context helps future analysis.</p>
+          </div>
+
+          <div class="form-field">
+            <label for="notes">Add Notes (optional)</label>
+            <textarea
+              id="notes"
+              formControlName="notes"
+              class="input-field textarea"
+              rows="6"
+              placeholder="E.g., 'Festival promo, heavy footfall', 'New product launch', 'Minor downtime 2–3 PM'"
+              maxlength="200"
+            ></textarea>
+            <div class="count-row">
+              <small class="help-text">
+                {{ (salesForm.get('notes')?.value?.length || 0) }} / 200
+              </small>
+            </div>
+          </div>
+
+          <!-- Mini derived numbers -->
+          <div class="derived">
+            <div class="derived-row">
+              <span>Avg. Order Value</span>
+              <strong>
+                ₹ {{
+                  (salesForm.get('totalSales')?.value && salesForm.get('totalOrders')?.value)
+                    ? (salesForm.get('totalSales')?.value / (salesForm.get('totalOrders')?.value || 1))
+                    : 0 | number:'1.2-2'
+                }}
+              </strong>
+            </div>
+            <div class="derived-row">
+              <span>Online %</span>
+              <strong>
+                {{
+                  (salesForm.get('onlineSales')?.value && salesForm.get('totalSales')?.value)
+                    ? (100 * (salesForm.get('onlineSales')?.value) / (salesForm.get('totalSales')?.value || 1))
+                    : 0 | number:'1.0-0'
+                }}%
+              </strong>
+            </div>
+            <div class="derived-row">
+              <span>Offline %</span>
+              <strong>
+                {{
+                  (salesForm.get('offlineSales')?.value && salesForm.get('totalSales')?.value)
+                    ? (100 * (salesForm.get('offlineSales')?.value) / (salesForm.get('totalSales')?.value || 1))
+                    : 0 | number:'1.0-0'
+                }}%
+              </strong>
+            </div>
+          </div>
+        </section>
+      </aside>
+    </div>
+
+    <!-- Sticky Bottom Action Bar -->
+    <div class="sticky-actions">
+      <div class="sticky-inner">
+        <div class="hint">
+          @if (salesForm.invalid && (submitted)) {
+            <span class="hint-badge">Fix errors above</span>
+          } @else {
+            <span class="hint-muted">Review & save your entry</span>
+          }
+        </div>
+        <button type="submit" class="submit-btn" [disabled]="salesForm.invalid || loading">
+          <span class="btn-text">{{ loading ? 'Saving...' : 'Save Sales Data' }}</span>
+          @if (loading) { <span class="btn-loader"></span> }
+        </button>
+      </div>
+    </div>
+  </form>
+</div>

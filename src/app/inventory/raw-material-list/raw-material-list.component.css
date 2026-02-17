@@ -1,0 +1,40 @@
+.list-container {
+  padding: 20px;
+  background: #f9fafb;
+  min-height: calc(100vh - 100px);
+  font-family: 'Inter', sans-serif;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.header h2 {
+  font-size: 22px;
+  font-weight: 700;
+  color: #1a2e47;
+  margin: 0;
+}
+
+.btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  padding: 8px 14px;
+  background: #1a2e47;
+  color: #fff;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+.btn:hover {
+  background: #0e1620;
+}
+.btn .material-icons {
+  font-size: 18px;
+}

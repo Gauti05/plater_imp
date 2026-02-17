@@ -1,0 +1,413 @@
+/* Custom Color Variables for a more vibrant, modern look */
+:root {
+  --primary: #4f46e5; /* Indigo-600 */
+  --primary-hover: #4338ca; /* Indigo-700 */
+  --bg-main: #f9fafb; /* Light Background */
+  --bg-surface: #ffffff; /* White surfaces */
+  --border: #e5e7eb; /* Light Gray Border */
+  --text-main: #1f2937; /* Dark Gray Text */
+  --text-muted: #6b7280; /* Medium Gray Text */
+
+  /* Status Colors */
+  --status-available: #10b981; /* Green-600 */
+  --status-occupied: #ef4444; /* Red-600 */
+  --status-reserved: #f59e0b; /* Yellow-600 */
+
+  --radius-sm: 6px;
+  --radius-md: 12px;
+  --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+body {
+  background: var(--bg-main);
+}
+
+.table-management-wrapper {
+ 
+  margin: 0 auto;
+ 
+}
+
+/* HEADER */
+.header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.page-title {
+  font-size: 28px;
+  font-weight: 800;
+  color: var(--text-main);
+}
+
+/* ADD TABLE BUTTON */
+.add-table-btn {
+  padding: 10px 18px;
+  font-weight: 700;
+  font-size: 14px;
+  background: var(--primary);
+  color: white;
+  border: none;
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-sm);
+  transition: background 0.25s, transform 0.2s, box-shadow 0.25s;
+}
+
+.add-table-btn:hover {
+  background: var(--primary-hover);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 10px rgba(79, 70, 229, 0.3);
+}
+
+/* ===== FLOOR AREA (Themes) ===== */
+.floor-layout {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 30px;
+  box-shadow: var(--shadow-md);
+  min-height: 70vh;
+  background-size: cover;
+  background-position: center;
+  transition: background 0.3s ease;
+}
+
+/* Default Theme (Wood is inviting) */
+.floor-layout.wood-theme {
+ 
+  background-blend-mode: soft-light; /* Blend the background for readability */
+  background-color: rgba(255, 255, 255, 0.85);
+}
+
+/* ===== TABLE GRID ===== */
+.table-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 40px;
+  justify-items: center;
+  padding: 10px;
+}
+
+/* ===== TABLE VISUAL ===== */
+.table-visual {
+  text-align: center;
+  transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1), opacity 0.3s;
+  cursor: pointer;
+  padding: 10px; /* Gives more click area */
+  border-radius: var(--radius-sm);
+}
+
+/* Enhanced Hover Effect */
+.table-visual:hover {
+  transform: scale(1.08) translateY(-4px);
+  /* The shadow is applied dynamically in TS */
+}
+
+.table-circle {
+  position: relative;
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  border: 3px solid; /* Border color set dynamically */
+  background: var(--bg-surface);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* Box shadow set dynamically for status glow */
+  transition: all 0.3s ease;
+  overflow: hidden;
+}
+
+.table-number {
+  font-weight: 700;
+  font-size: 20px;
+  color: var(--text-main);
+  z-index: 2;
+  transition: color 0.3s;
+}
+
+/* Status-based Table Number and Chair Colors */
+.table-visual.table-available .chair {
+  background: var(--status-available);
+}
+.table-visual.table-occupied .chair {
+  background: var(--status-occupied);
+}
+.table-visual.table-reserved .chair {
+  background: var(--status-reserved);
+}
+
+/* Chair Hover effect */
+.table-visual:hover .chair {
+  transform: rotate(calc(var(--index) * (360deg / var(--chairs))))
+    translateY(calc(42px * -1)) scale(1.2); /* Slightly smaller radius, slight scale */
+  transition: transform 0.3s ease;
+}
+
+/* CHAIRS */
+.chairs {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+}
+
+.chair {
+  --radius: 40px; /* positions chairs near the inside edge */
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  top: 50%;
+  left: 50%;
+  transform: rotate(calc(var(--index) * (360deg / var(--chairs))))
+    translateY(calc(var(--radius) * -1));
+  box-shadow: 0 0 4px rgba(0, 0, 0, 0.2);
+  transition: transform 0.3s ease, background 0.3s;
+}
+
+.table-status {
+  font-size: 14px;
+  color: var(--text-muted);
+  margin-top: 10px;
+  text-transform: capitalize;
+  font-weight: 500;
+}
+.table-status span {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+/* Status-based Status Text Color */
+.table-visual.table-available .table-status {
+  color: var(--status-available);
+  font-weight: 600;
+}
+.table-visual.table-occupied .table-status {
+  color: var(--status-occupied);
+  font-weight: 600;
+}
+.table-visual.table-reserved .table-status {
+  color: var(--status-reserved);
+  font-weight: 600;
+}
+
+/* ===== SIDEBAR (Drawer) ===== */
+.drawer {
+  position: fixed;
+  top: 0;
+  right: -360px;
+  width: 360px;
+  height: 100vh;
+  background: var(--bg-surface);
+  border-left: 1px solid var(--border);
+  box-shadow: -10px 0 30px rgba(0, 0, 0, 0.15); /* Stronger shadow */
+  transition: right 0.4s cubic-bezier(0.4, 0, 0.2, 1); /* Smoother transition */
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+}
+
+.drawer.open {
+  right: 0;
+}
+
+.drawer-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px;
+  border-bottom: 1px solid var(--border);
+}
+.drawer-header h3 {
+  font-weight: 700;
+  font-size: 18px;
+  color: var(--text-main);
+}
+
+.close-btn {
+  background: transparent;
+  border: none;
+  font-size: 28px;
+  cursor: pointer;
+  color: var(--text-muted);
+  line-height: 1;
+  transition: color 0.2s;
+}
+.close-btn:hover {
+  color: var(--text-main);
+}
+
+/* ===== DRAWER BODY (Form) ===== */
+.drawer-body {
+  padding: 20px;
+  flex: 1;
+  overflow-y: auto;
+}
+
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-group label {
+  display: block;
+  font-size: 14px;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+
+.form-group input,
+.form-group select {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 16px;
+  color: var(--text-main);
+  transition: border-color 0.2s, box-shadow 0.2s;
+  background: var(--bg-main);
+}
+
+.form-group input:focus,
+.form-group select:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.2);
+  background: var(--bg-surface);
+}
+
+/* BUTTONS */
+.btn.primary.full {
+  width: 100%;
+  padding: 12px;
+  background: var(--primary);
+  color: white;
+  font-weight: 700;
+  border: none;
+  border-radius: var(--radius-sm);
+  transition: background 0.25s, opacity 0.2s;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  cursor: pointer;
+}
+
+.btn.primary.full:hover:not([disabled]) {
+  background: var(--primary-hover);
+}
+
+.btn.primary.full[disabled] {
+  background: var(--text-muted);
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* SUCCESS MESSAGE */
+.success-msg {
+  color: var(--status-available);
+  font-weight: 700;
+  font-size: 14px;
+  margin-top: 15px;
+  text-align: center;
+  padding: 8px;
+  background: #ecfdf5; /* Light green background */
+  border-radius: var(--radius-sm);
+}
+
+/* ===== OVERLAY ===== */
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4); /* Darker overlay for better focus */
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.4s ease;
+  z-index: 90;
+}
+
+.overlay.show {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* ===== EMPTY STATE ===== */
+.empty-state {
+  text-align: center;
+  color: var(--text-muted);
+  padding: 60px;
+  font-size: 16px;
+  font-style: italic;
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 768px) {
+  .drawer {
+    width: 95%;
+  }
+
+  .table-grid {
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 30px;
+  }
+}
+
+/* ... Previous CSS ... */
+
+/* QR CODE SECTION STYLES */
+.qr-section {
+  margin: 20px 0;
+  padding: 16px;
+  background: var(--bg-main);
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-md);
+  text-align: center;
+}
+
+.qr-section label {
+  display: block;
+  font-weight: 700;
+  color: var(--text-main);
+  margin-bottom: 12px;
+}
+
+.qr-container {
+  background: white;
+  padding: 10px;
+  display: inline-block;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  margin-bottom: 10px;
+}
+
+.qr-link {
+  font-size: 11px;
+  color: var(--text-muted);
+  word-break: break-all;
+  margin-bottom: 12px;
+  background: white;
+  padding: 4px;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+}
+
+.btn.outline {
+  border: 1px solid var(--border);
+  background: white;
+  color: var(--text-main);
+  font-weight: 600;
+  padding: 10px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  width: 100%;
+  transition: all 0.2s;
+}
+
+.btn.outline:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+  background: #f0fdf4;
+}

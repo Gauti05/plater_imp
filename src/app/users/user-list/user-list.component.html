@@ -1,0 +1,56 @@
+<!-- 
+  <app-dynamic-table
+    [data]="users"
+    [columns]="tableColumns"
+    [pageSize]="10"
+    [hasActions]="false"
+    [buttonLabel]="'Add User'"
+    [buttonRoute]="'/users/add'"
+    [rowRouteBase]="'/users/edit'"
+    [rowIdField]="'id'">
+  </app-dynamic-table>
+ -->
+
+
+ <div class="users-page-container">
+  <div class="table-card">
+    
+    <app-dynamic-table
+      [data]="paginatedData"
+      [columns]="tableColumns"
+      [showPagination]="false"
+      [hasActions]="false"
+      [buttonLabel]="'Add User'"
+      [buttonRoute]="'/' + storeSlug + '/users/add'"  [rowRouteBase]="'/' + storeSlug + '/users/edit'" [rowIdField]="'id'">
+    </app-dynamic-table>
+
+    <div class="pagination-footer">
+      <div class="page-info">
+        Showing <b>{{ filteredData.length > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0 }}</b> - 
+        <b>{{ Math.min(currentPage * itemsPerPage, filteredData.length) }}</b> of 
+        <b>{{ filteredData.length }}</b>
+      </div>
+      
+      <div class="page-controls">
+        <div class="per-page">
+          <span>Rows:</span>
+          <select [(ngModel)]="itemsPerPage" (change)="onPageSizeChange()">
+            <option [value]="5">5</option>
+            <option [value]="10">10</option>
+            <option [value]="20">20</option>
+            <option [value]="50">50</option>
+          </select>
+        </div>
+
+        <div class="nav-buttons">
+          <button class="nav-btn" [disabled]="currentPage === 1" (click)="changePage(currentPage - 1)">‹</button>
+          @for (page of visiblePages; track page) {
+            <button class="nav-btn" [class.active]="page === currentPage" (click)="changePage(page)">{{ page }}</button>
+          }
+          <button class="nav-btn" [disabled]="currentPage === totalPages" (click)="changePage(currentPage + 1)">›</button>
+        </div>
+      </div>
+    </div>
+    
+  </div>
+</div>

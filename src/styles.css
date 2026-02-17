@@ -1,0 +1,60 @@
+/* =====================================================
+   GLOBAL THEME VARIABLES
+   ===================================================== */
+:root {
+  --primary: #2563eb;
+  --primary-hover: #1d4ed8;
+  --accent: #3b82f6;
+  
+  /* Light Mode Colors */
+  --bg-main: #f9fafb;
+  --bg-surface: #ffffff;
+  --bg-hover: #f3f4f6;
+  --text-main: #111827;
+  --text-muted: #6b7280;
+  --border: #e5e7eb;
+  
+  /* Layout Math */
+  --sidebar-width: 200px;
+  --sidebar-collapsed-width: 72px;
+  
+  /* Globals */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.06);
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --transition: 0.25s ease-in-out;
+}
+
+/* =====================================================
+   DARK MODE MAPPING
+   (Applied dynamically to the body tag)
+   ===================================================== */
+body.dark-mode {
+  --bg-main: #0F172A;
+  --bg-surface: #1E293B;
+  --bg-hover: #334155;
+  --text-main: #F9FAFB;
+  --text-muted: #94A3B8;
+  --border: #334155;
+}
+
+/* =====================================================
+   GLOBAL RESETS
+   ===================================================== */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  height: 100%;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  
+  /* This ensures the background and text color instantly switch when the dark-mode class is applied */
+  background-color: var(--bg-main);
+  color: var(--text-main);
+  overflow: hidden;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}

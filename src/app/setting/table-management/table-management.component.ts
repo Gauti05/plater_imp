@@ -1,0 +1,193 @@
+import { Component, OnInit, ViewEncapsulation, inject } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import {
+  Firestore,
+  collection,
+  addDoc,
+  updateDoc,
+  doc,
+  getDocs,
+} from '@angular/fire/firestore';
+import { ActivatedRoute } from '@angular/router';
+
+// ✅ CORRECT IMPORT: 'QRCodeComponent' (Capital Q, R, C)
+import { QRCodeComponent } from 'angularx-qrcode';
+
+interface Table {
+  id: string;
+  number: number;
+  capacity: number;
+  status: 'available' | 'occupied' | 'reserved';
+  isOccupied?: boolean;
+  orderId?: string | null;
+  waiter?: string | null;
+}
+
+@Component({
+  selector: 'app-table-management',
+  standalone: true,
+  // ✅ Add QRCodeComponent to imports
+  imports: [CommonModule, FormsModule, QRCodeComponent], 
+  templateUrl: './table-management.component.html',
+  styleUrls: ['./table-management.component.css'],
+  encapsulation: ViewEncapsulation.None,
+})
+export class TableManagementComponent implements OnInit {
+  private firestore = inject(Firestore);
+  private route = inject(ActivatedRoute);
+
+  storeSlug: string | null | undefined = null;
+  sidebarOpen = false;
+  isEditing = false;
+  loading = false;
+  successMessage = '';
+  tables: Table[] = [];
+
+  form: {
+    id: string;
+    number: number | null;
+    capacity: number | null;
+    status: string;
+  } = {
+    id: '',
+    number: null,
+    capacity: 4,
+    status: 'available',
+  };
+
+  ngOnInit() {
+    this.storeSlug = this.route.parent?.snapshot.paramMap.get('storeSlug');
+    this.loadTables();
+  }
+
+  async loadTables() {
+    if (!this.storeSlug) return;
+    const colRef = collection(this.firestore, `Stores/${this.storeSlug}/tables`);
+    const snap = await getDocs(colRef);
+
+    this.tables = snap.docs
+      .map((d) => {
+        const data = d.data() as any;
+        let derivedStatus: 'available' | 'occupied' | 'reserved' = data.status;
+        if (data.isOccupied) derivedStatus = 'occupied';
+
+        return {
+          id: d.id,
+          number: Number(data.number),
+          capacity: Number(data.capacity),
+          status: derivedStatus,
+          isOccupied: !!data.isOccupied,
+          orderId: data.orderId || null,
+          waiter: data.waiter || null,
+        } as Table;
+      })
+      .sort((a, b) => a.number - b.number);
+  }
+
+  getStatusColor(table: Table): string {
+    if (table.isOccupied || table.status === 'occupied') return '#ef4444';
+    if (table.status === 'reserved') return '#f59e0b';
+    return '#10b981';
+  }
+
+  getShadowForStatus(table: Table): string {
+    const baseShadow = '0 2px 4px rgba(0, 0, 0, 0.1)';
+    let color;
+    if (table.isOccupied || table.status === 'occupied')
+      color = 'rgba(239, 68, 68, 0.4)';
+    else if (table.status === 'reserved')
+      color = 'rgba(245, 158, 11, 0.4)';
+    else color = 'rgba(16, 185, 129, 0.4)';
+    return `${baseShadow}, 0 0 10px ${color}`;
+  }
+
+  openSidebar() {
+    this.sidebarOpen = true;
+    this.isEditing = false;
+    this.successMessage = '';
+    this.form = { id: '', number: null, capacity: 4, status: 'available' };
+  }
+
+  closeSidebar() {
+    this.sidebarOpen = false;
+    this.successMessage = '';
+  }
+
+  editTable(table: Table) {
+    this.sidebarOpen = true;
+    this.isEditing = true;
+    this.successMessage = '';
+    this.form = {
+      id: table.id,
+      number: table.number,
+      capacity: table.capacity,
+      status: table.status,
+    };
+  }
+
+  async saveTable() {
+    if (!this.form.number || !this.form.capacity || !this.storeSlug) return;
+    this.loading = true;
+
+    const tableData = {
+      number: Number(this.form.number),
+      capacity: Number(this.form.capacity),
+      status: this.form.status,
+      isOccupied: false,
+      orderId: null,
+      waiter: null,
+    };
+
+    try {
+      if (this.isEditing && this.form.id) {
+        const docRef = doc(
+          this.firestore,
+          `Stores/${this.storeSlug}/tables/${this.form.id}`
+        );
+        await updateDoc(docRef, tableData);
+        this.successMessage = '✅ Table updated!';
+      } else {
+        const colRef = collection(
+          this.firestore,
+          `Stores/${this.storeSlug}/tables`
+        );
+        await addDoc(colRef, tableData);
+        this.successMessage = '✅ Table created!';
+      }
+
+      await this.loadTables();
+      setTimeout(() => {
+        this.successMessage = '';
+        this.closeSidebar();
+      }, 1500);
+    } catch (err) {
+      console.error('Error saving table:', err);
+      this.successMessage = '❌ Error saving table!';
+      setTimeout(() => (this.successMessage = ''), 3000);
+    } finally {
+      this.loading = false;
+    }
+  }
+
+  getQrData(tableNumber: number | null): string {
+    if (!tableNumber || !this.storeSlug) return '';
+    return `https://platterweb.bizzeazy.com/${this.storeSlug}?table=${tableNumber}`;
+  }
+
+  downloadQrCode(tableNumber: number | null) {
+    if (!tableNumber) return;
+    
+    // Select the canvas generated by the <qrcode> tag
+    const canvas = document.querySelector('qrcode canvas') as HTMLCanvasElement;
+    
+    if (canvas) {
+      const imageUrl = canvas.toDataURL('image/png');
+      const link = document.createElement('a');
+      link.href = imageUrl;
+      // Name the file cleanly
+      link.download = `QR_${this.storeSlug}_Table-${tableNumber}.png`;
+      link.click();
+    }
+  }
+}

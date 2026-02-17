@@ -1,0 +1,110 @@
+<div class="page-container">
+  <!-- Form Layout -->
+  <div class="form-layout">
+    <!-- Main Form Column -->
+    <div class="main-column">
+      <section class="card">
+        <h3 class="section-title">General Information</h3>
+        <div class="form-grid">
+          <div class="form-group">
+            <label class="form-label">Name</label>
+            <input type="text" [(ngModel)]="rawMaterial.name" name="name" class="form-input" required />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Category</label>
+            <div class="category-input">
+              @if (!showNewCategoryInput) {
+                <select [(ngModel)]="rawMaterial.category" name="category" class="form-select" required>
+                  <option value="" disabled>Select category</option>
+                  @for (cat of availableCategories; track cat) {
+                    <option [value]="cat">{{ cat }}</option>
+                  }
+                </select>
+              } @else {
+                <input type="text" [(ngModel)]="newCategory" name="newCategory" class="form-input" placeholder="New category" />
+              }
+              <button type="button" class="btn btn-tertiary btn-small" (click)="showNewCategoryInput = !showNewCategoryInput">
+                {{ showNewCategoryInput ? 'Cancel' : '+ New' }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="card">
+        <h3 class="section-title">Inventory Details</h3>
+        <div class="form-grid">
+          <div class="form-group">
+            <label class="form-label">Current Stock</label>
+            <input type="number" [(ngModel)]="rawMaterial.stock" name="stock" class="form-input" required />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Unit</label>
+            <select [(ngModel)]="rawMaterial.unit" name="unit" class="form-select" required>
+              <option value="" disabled>Select unit</option>
+              @for (unit of availableUnits; track unit) {
+                <option [value]="unit">{{ unit | titlecase }}</option>
+              }
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Low Stock Threshold</label>
+          <input type="number" [(ngModel)]="rawMaterial.lowStockThreshold" name="lowStockThreshold" class="form-input" />
+        </div>
+      </section>
+
+      <section class="card">
+        <h3 class="section-title">Cost & Value</h3>
+        <div class="form-group">
+          <label class="form-label">Purchase Price per Unit (₹)</label>
+          <input type="number" [(ngModel)]="rawMaterial.costPerUnit" name="costPerUnit" class="form-input" />
+          <p class="hint">The price you pay for each unit of this item.</p>
+        </div>
+        <div class="summary-box">
+          <span class="summary-label">Total Inventory Value</span>
+          <strong class="summary-value">{{ (rawMaterial.stock * (rawMaterial.costPerUnit || 0)) | currency:'INR' }}</strong>
+        </div>
+      </section>
+    </div>
+
+    <!-- Sidebar Column -->
+    <aside class="side-column">
+      <div class="card">
+        <h4 class="card-title">Status</h4>
+        <div class="status-indicator">
+          <div class="form-toggle">
+            <label class="switch">
+              <input type="checkbox" [(ngModel)]="rawMaterial.isActive" name="isActive">
+              <span class="slider"></span>
+            </label>
+            <span class="status-label">{{ rawMaterial.isActive ? 'Active' : 'Inactive' }}</span>
+          </div>
+        </div>
+        <div class="status-notes">
+          This item is {{ rawMaterial.isActive ? 'enabled for use in recipes.' : 'disabled and will not appear in lists.' }}
+        </div>
+      </div>
+      
+      <div class="card">
+        <h4 class="card-title">Inventory Health</h4>
+        <div class="status-indicator">
+          <span class="badge" [class.low]="rawMaterial.stock < rawMaterial.lowStockThreshold">
+            {{ rawMaterial.stock >= rawMaterial.lowStockThreshold ? 'In Stock' : 'Low Stock' }}
+          </span>
+          <p class="status-text">{{ rawMaterial.stock > 0 ? 'Available' : 'Out of stock' }}</p>
+        </div>
+      </div>
+
+      <!-- Actions Card -->
+      <div class="card card-actions-block">
+        <button type="submit" class="btn btn-primary btn-block" (click)="saveRawMaterial()">
+          <svg viewBox="0 0 24 24" class="icon"><path d="M17 3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V7l-4-4zM5 19V5h10.59L19 8.41V19H5zm4-8h6v2H9v-2zm0 4h6v2H9v-2z"/></svg> Save
+        </button>
+        <button class="btn btn-secondary btn-block" (click)="router.navigate(['/', storeSlug, 'inventory', 'raw-materials'])">
+          <svg viewBox="0 0 24 24" class="icon"><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg> Back
+        </button>
+      </div>
+    </aside>
+  </div>
+</div>

@@ -1,0 +1,42 @@
+@import '../../add-raw-material/add-raw-material.component.css';
+
+.option-row {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 8px;
+  align-items: center;
+}
+.option-row .form-input {
+  flex: 1;
+}
+
+.menu-assoc {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px 16px;
+  margin-top: 12px;
+}
+
+.checkbox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.status-banner {
+  margin-top: 16px;
+  padding: 10px 14px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+}
+.status-banner.success {
+  background: #e6ffed;
+  color: #065f46;
+  border: 1px solid #10b981;
+}
+.status-banner.error {
+  background: #fee2e2;
+  color: #b91c1c;
+  border: 1px solid #ef4444;
+}

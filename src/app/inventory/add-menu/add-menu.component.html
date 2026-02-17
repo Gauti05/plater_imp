@@ -1,0 +1,239 @@
+<div class="page-container">
+  <div class="form-layout">
+    <div class="main-column">
+
+      <section class="card">
+        <h3 class="section-title">General Information</h3>
+        <div class="form-grid">
+          <div class="form-group">
+            <label class="form-label">Name</label>
+            <input type="text" [(ngModel)]="menuItem.name" name="name" class="form-input" required />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Category</label>
+            <div class="category-input">
+              @if (!showNewCategoryInput) {
+                <select [(ngModel)]="menuItem.category" name="category" class="form-select" required>
+                  <option value="" disabled [selected]="!menuItem.category">Select category</option>
+                  @for (cat of availableCategories; track cat) {
+                    <option [value]="cat">{{ cat }}</option>
+                  }
+                </select>
+              } @else {
+                <input type="text" [(ngModel)]="newCategory" name="newCategory" class="form-input" placeholder="New category name" />
+                <button
+                  type="button"
+                  class="btn btn-tertiary btn-small"
+                  (click)="saveNewCategory()"
+                  [disabled]="!newCategory.trim()">
+                  Save
+                </button>
+              }
+              
+              <button
+                type="button"
+                class="btn btn-tertiary btn-small"
+                (click)="showNewCategoryInput = !showNewCategoryInput"
+                style="min-width: 60px; margin-left: 8px;">
+                {{ showNewCategoryInput ? 'Cancel' : '+ New' }}
+              </button>
+
+            </div>
+            
+          
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Price (₹)</label>
+          <input type="number" [(ngModel)]="menuItem.price" name="price" class="form-input" required />
+          <p class="hint">You can adjust this price based on the recommended value shown below.</p>
+        </div>
+      </section>
+
+      <section class="card">
+        <h3 class="section-title">Media</h3>
+        <div class="form-group">
+          <label class="form-label">Menu Item Image</label>
+          <input type="file" (change)="handleImageChange($event)" class="form-input" accept="image/*" />
+        </div>
+        @if (imagePreviewUrl) {
+          <div class="image-preview">
+            <img [src]="imagePreviewUrl" alt="Image Preview" />
+            <span class="remove-icon" (click)="removeImage()" title="Remove Photo">
+              &#10005;
+            </span>
+          </div>
+        }
+      </section>
+
+      <section class="card">
+        <h3 class="section-title">Recipe & Cost Details</h3>
+        <p class="section-subtitle">
+          Define raw materials and quantities used in this menu item. Stock usage and cost will be tracked automatically.
+        </p>
+
+        <div class="recipe-input-grid">
+          <div class="form-group">
+            <label class="form-label">Raw Material</label>
+            <select [(ngModel)]="selectedRawMaterialId" name="selectedRawMaterialId" class="form-select" (change)="onRawMaterialSelect()">
+              <option value="" disabled>Select an ingredient</option>
+              @for (rawMat of availableRawMaterials; track rawMat.id) {
+                <option [value]="rawMat.id">{{ rawMat.name }} ({{ rawMat.unit | titlecase }})</option>
+              }
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Quantity ({{ selectedDisplayUnit || 'unit' }})</label>
+            <input type="number" [(ngModel)]="recipeQuantity" name="recipeQuantity" class="form-input" />
+          </div>
+          <div class="form-group">
+            <button type="button" class="btn btn-secondary btn-block" (click)="addIngredientToRecipe()" [disabled]="!selectedRawMaterialId || recipeQuantity <= 0">Add Ingredient</button>
+          </div>
+        </div>
+
+        @if (menuItem.recipe && menuItem.recipe.length > 0) {
+          <div class="recipe-list">
+            @for (ingredient of menuItem.recipe; track $index) {
+              <div class="recipe-item">
+                <span class="item-name">{{ ingredient.name }}</span>
+                <span class="item-quantity">
+                  {{
+                    convertToDisplayUnit(ingredient.unit, ingredient.quantity)
+                      | number:'1.0-2'
+                  }}
+                  {{ getDisplayUnit(ingredient.unit) }}
+                </span>
+                <button type="button" class="remove-btn" (click)="removeIngredientFromRecipe($index)">
+                  <svg viewBox="0 0 24 24" class="icon">
+                    <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
+                  </svg>
+                </button>
+              </div>
+            }
+          </div>
+        }
+      </section>
+
+      <section class="card">
+        <h3 class="section-title">Pricing & Profitability</h3>
+        
+        <div class="form-group">
+          <label class="form-label">Tax Rate (%)</label>
+          <input
+            type="number"
+            [(ngModel)]="menuItem.taxRate"
+            name="taxRate"
+            class="form-input"
+            min="0"
+            max="100" />
+          <p class="hint">The sales tax applied to the menu item (e.g., GST/VAT).</p>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Target Profit Margin (%)</label>
+          <input
+            type="number"
+            [(ngModel)]="targetProfitMargin"
+            name="targetProfitMargin"
+            class="form-input" />
+          <p class="hint">Recommended selling price will be calculated live.</p>
+        </div>
+
+        <div class="cost-summary">
+          <div class="summary-box">
+            <span class="summary-label">Estimated Plate Cost</span>
+            <strong class="summary-value">{{ totalPlateCost | currency:'INR' }}</strong>
+          </div>
+          
+          <div class="summary-box">
+            <span class="summary-label">Recommended Base Price (Excl. Tax)</span>
+            <strong class="summary-value">{{ recommendedBaseSellingPrice | currency:'INR' }}</strong>
+          </div>
+          <div class="summary-box">
+            <span class="summary-label">Recommended Price (Incl. Tax)</span>
+            <strong class="summary-value">{{ recommendedSellingPriceWithTax | currency:'INR' }}</strong>
+          </div>
+          </div>
+      </section>
+    </div>
+
+    <aside class="side-column">
+
+      <section class="card">
+        <h4 class="card-title">Status</h4>
+        <div class="status-indicator">
+          <label class="switch">
+            <input type="checkbox" [(ngModel)]="menuItem.isActive" name="isActive" />
+            <span class="slider"></span>
+          </label>
+          <span class="status-label">{{ menuItem.isActive ? 'Active' : 'Inactive' }}</span>
+        </div>
+      </section>
+
+      <section class="card">
+        <h4 class="card-title">Inventory Tracking</h4>
+        <div class="status-indicator">
+          <label class="switch">
+            <input type="checkbox" [(ngModel)]="menuItem.trackInventory" name="trackInventory" />
+            <span class="slider"></span>
+          </label>
+          <span class="status-label">
+            {{ menuItem.trackInventory ? 'Track inventory' : 'Unlimited (no tracking)' }}
+          </span>
+        </div>
+      </section>
+
+      <section class="card">
+        <h4 class="card-title">Inventory Health</h4>
+        <div class="status-indicator">
+          <span class="badge" [class.low]="totalServingsInInventory < 5">
+            {{ totalServingsInInventory === INF ? 'Unlimited' : totalServingsInInventory + ' Servings' }}
+          </span>
+          <p class="status-text">
+            {{ totalServingsInInventory === INF
+              ? 'Stock not tracked. Always available.'
+              : (totalServingsInInventory > 0 ? 'Available in inventory.' : 'Out of stock.') }}
+          </p>
+        </div>
+      </section>
+
+      <section class="card">
+        <h4 class="card-title">Allergens</h4>
+        <div class="allergen-grid">
+          @for (allergen of commonAllergens; track allergen) {
+            <button
+              type="button"
+              class="allergen-btn"
+              [class.selected]="isAllergenSelected(allergen)"
+              (click)="toggleAllergen(allergen)">
+              {{ allergen }}
+            </button>
+          }
+        </div>
+      </section>
+
+      <section class="card card-actions-block">
+        <button type="submit" class="btn btn-primary btn-block" (click)="saveMenuItem()">
+          <svg viewBox="0 0 24 24" class="icon">
+            <path d="M17 3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V7l-4-4zM5 19V5h10.59L19 8.41V19H5zm4-8h6v2H9v-2zm0 4h6v2H9v-2z"/>
+          </svg> 
+          Save
+        </button>
+        <button style="margin-top: 10px;" class="btn btn-secondary btn-block" (click)="router.navigate(['/', storeSlug, 'inventory', 'menu-items'])">
+          <svg viewBox="0 0 24 24" class="icon">
+            <path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/>
+          </svg> 
+          Back
+        </button>
+      </section>
+    </aside>
+  </div>
+</div>
+
+@if (isSaving) {
+  <div class="loader-overlay">
+    <div class="loader"></div>
+    <p>Saving menu item...</p>
+  </div>
+}

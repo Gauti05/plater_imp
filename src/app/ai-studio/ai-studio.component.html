@@ -1,0 +1,126 @@
+<div class="studio-wrap">
+
+  <!-- Header / Title -->
+  <header class="studio-header glassy">
+    <div class="title-block">
+      <h1 class="studio-title">SnapSorcery </h1>
+    
+    </div>
+
+    <div class="header-actions">
+      <label for="product-image-upload" class="btn btn-primary">
+        <i class="bi bi-upload me-1"></i> Upload Product Image
+        <input type="file" id="product-image-upload" (change)="onFileSelected($event)" accept="image/*" />
+      </label>
+
+      <!-- Optional secondary actions (hook up later if needed) -->
+      <!-- <button type="button" class="btn btn-ghost">History</button> -->
+    </div>
+  </header>
+
+  <!-- Content Grid -->
+  <div class="studio-grid">
+    <!-- LEFT: Controls -->
+    <section class="panel glassy">
+      <div class="panel-head">
+        <h2 class="panel-title">Shoot Settings</h2>
+        <span class="badge badge-soft">Light Theme</span>
+      </div>
+
+      <div class="form-grid">
+        <!-- Category -->
+        <div class="form-item">
+          <label for="category" class="form-label">Product Category</label>
+          <select id="category" class="form-control" [(ngModel)]="selectedCategory">
+            @for (category of productCategories; track category) {
+              <option [value]="category">{{ category | titlecase }}</option>
+            }
+          </select>
+          <small class="hint">Choose the closest match for best styling presets.</small>
+        </div>
+
+        <!-- Specific Style -->
+        <div class="form-item">
+          <label for="style" class="form-label">Specific Style (Optional)</label>
+          <input
+            type="text"
+            id="style"
+            class="form-control"
+            [(ngModel)]="specificStyle"
+            placeholder="e.g. “lifestyle outdoor shoot”, “white studio background”"
+          />
+          <small class="hint">Describe vibes, background, lighting, or composition.</small>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <button
+        (click)="generateImage()"
+        [disabled]="isLoading || !selectedFile"
+        class="btn btn-success btn-lg w-100"
+      >
+        @if (isLoading) {
+          <span class="spinner"></span> Generating…
+        } @else {
+          <i class="bi bi-magic me-1"></i> Generate Professional Shoot
+        }
+      </button>
+
+      @if (errorMessage) {
+        <div class="alert alert-danger mt-3">
+          {{ errorMessage }}
+        </div>
+      }
+
+      @if (isLoading) {
+        <div class="loader-block mt-3">
+          <span class="spinner xl"></span>
+          <p class="muted m-0">Processing image…</p>
+        </div>
+      }
+    </section>
+
+    <!-- RIGHT: Previews -->
+    <section class="panel glassy">
+      <div class="panel-head">
+        <h2 class="panel-title">Preview</h2>
+        <div class="preview-tips">
+          <span class="dot"></span> Tip: Keep uploads sharp & well-lit for best results.
+        </div>
+      </div>
+
+      @if (originalImageUrl || generatedImageUrl) {
+        <div class="preview-grid">
+          @if (originalImageUrl) {
+            <div class="card photo">
+              <div class="card-head">
+                <h3 class="card-title">Original</h3>
+              </div>
+              <div class="card-body">
+                <img [src]="originalImageUrl" alt="Original Product" class="img-fit" />
+              </div>
+            </div>
+          }
+
+          @if (generatedImageUrl) {
+            <div class="card photo highlight">
+              <div class="card-head">
+                <h3 class="card-title">AI Generated</h3>
+                <span class="badge badge-accent">Enhanced</span>
+              </div>
+              <div class="card-body">
+                <img [src]="generatedImageUrl" alt="AI Generated Product Shoot" class="img-fit" />
+              </div>
+            </div>
+          }
+        </div>
+      } @else if (!isLoading && !errorMessage) {
+        <div class="placeholder">
+          <div class="ghost-img"></div>
+          <p class="muted">Upload a product image to get started!</p>
+        </div>
+      }
+    </section>
+  </div>
+</div>

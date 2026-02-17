@@ -1,0 +1,10 @@
+<app-dynamic-table
+  [data]="salesData"
+  [columns]="tableColumns"
+  [buttonLabel]="'Add Sales (Manual)'"
+  [buttonRoute]="'/sales/add'"
+  [hasActions]="true"
+  [rowRouteBase]="'sales/edit'"
+  (rowClick)="onRowClick($event)"
+>
+</app-dynamic-table>

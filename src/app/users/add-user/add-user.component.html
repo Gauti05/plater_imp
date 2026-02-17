@@ -1,0 +1,121 @@
+<div class="add-user-wrap">
+  <form #userForm="ngForm" (ngSubmit)="onSubmit(userForm)" class="user-form" novalidate>
+    
+    <header class="page-head">
+      <div class="title-section">
+        <h1 class="form-title">{{ isEditMode() ? 'Edit Profile' : 'Create New User' }}</h1>
+        <p class="form-description">Manage access levels and account security.</p>
+      </div>
+      
+      <div class="header-badges">
+        <div class="status-badge" [class.active]="user().isActive">
+          <span class="dot"></span>
+          {{ user().isActive ? 'Active' : 'Inactive' }}
+        </div>
+      </div>
+    </header>
+
+    <div class="form-layout-grid">
+      <div class="main-column">
+        
+        <section class="form-card">
+          <div class="card-header">
+            <h3>Identity & Contact</h3>
+            <p>Fundamental information for the user profile.</p>
+          </div>
+
+          <div class="input-grid">
+            <div class="field-wrap full">
+              <label>Full Name</label>
+              <input name="name" [(ngModel)]="user().name" required class="premium-input" placeholder="e.g. Alexander Pierce" />
+              <span class="help-txt">Used for display in logs and reports.</span>
+            </div>
+
+            <div class="field-wrap">
+              <label>Work Email</label>
+              <div class="input-icon-group">
+                <span class="prefix">&#64;</span>
+                <input name="email" type="email" [(ngModel)]="user().email" required email [disabled]="isEditMode()" class="premium-input" placeholder="name@company.com" />
+              </div>
+            </div>
+
+            <div class="field-wrap">
+              <label>Designation</label>
+              <input name="designation" [(ngModel)]="user().designation" required class="premium-input" placeholder="e.g. Senior Associate" />
+            </div>
+
+            @if (!isEditMode()) {
+              <div class="field-wrap full">
+                <label>Security Password</label>
+                <input name="password" type="password" [(ngModel)]="user().password" required minlength="6" class="premium-input" placeholder="Set a temporary password" />
+                <div class="password-strength-meter">
+                  <div class="strength-bar" [style.width]="(user().password?.length || 0) * 12 + '%'"></div>
+                </div>
+                <span class="help-txt">Minimum 6 characters. User can reset this later.</span>
+              </div>
+            }
+          </div>
+        </section>
+
+        <section class="form-card">
+          <div class="card-header">
+            <h3>Module Permissions</h3>
+            <p>Select which parts of the platform this user can access.</p>
+          </div>
+          
+          <div class="roles-selection-container">
+            @for (role of availableRoles; track role) {
+              <label class="premium-chip" [class.selected]="user().roles.includes(role)">
+                <input type="checkbox" class="hidden-check" [checked]="user().roles.includes(role)" (change)="onRoleChange(role, $event)">
+                <span class="indicator"></span>
+                <span class="role-name">{{ role }}</span>
+              </label>
+            }
+          </div>
+          <div class="roles-footer">
+            <span>{{ user().roles.length }} Roles currently assigned to this account.</span>
+          </div>
+        </section>
+
+      </div>
+
+      <aside class="side-column">
+        <section class="form-card sticky-sidebar">
+          <div class="card-header">
+            <h3>Account Settings</h3>
+          </div>
+
+          <div class="status-control">
+            <div class="control-label">
+              <strong>Account Status</strong>
+              <p>Toggle user's ability to sign in.</p>
+            </div>
+            <label class="ios-toggle">
+              <input type="checkbox" name="isActive" [(ngModel)]="user().isActive" [disabled]="loading()">
+              <span class="slider"></span>
+            </label>
+          </div>
+
+          <div class="summary-box">
+            <div class="summary-item">
+              <span class="label">Store ID</span>
+              <span class="value">{{ storeSlug || 'Global' }}</span>
+            </div>
+          </div>
+
+          <button type="submit" class="primary-btn-premium" [disabled]="userForm.invalid || loading()">
+            {{ loading() ? 'Saving Changes...' : (isEditMode() ? 'Update Profile' : 'Confirm & Create') }}
+          </button>
+          
+          @if (error()) {
+            <div class="error-alert">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+              {{ error() }}
+            </div>
+          }
+        </section>
+      </aside>
+    </div>
+
+  </form>
+</div>

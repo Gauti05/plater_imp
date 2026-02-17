@@ -1,0 +1,190 @@
+:root {
+  --brand: #0f2540;
+  --brand-light: #183a60;
+  --muted: #6b7280;
+  --accent: #10B981;
+  --accent-2: #2563eb;
+  --warning: #f59e0b;
+  --card-bg: #ffffff;
+  --border: #e6e9ef;
+  --bg: #f6f8fb;
+  --shadow: 0 4px 12px rgba(16, 24, 40, 0.06);
+}
+
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 20px;
+}
+
+/* KPI */
+.kpi-row {
+  grid-column: span 12;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+}
+.card {
+  background: var(--card-bg);
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  padding: 20px;
+  box-shadow: var(--shadow);
+  transition: all .2s ease;
+}
+.kpi .kpi-top {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+.kpi-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 50px;
+  height: 50px;
+  border-radius: 10px;
+  font-size: 24px;
+}
+.kpi-icon.brand-bg { background: rgba(15,37,64,0.1); color: var(--brand); }
+.kpi-icon.warning-bg { background: rgba(245,158,11,0.1); color: var(--warning); }
+.kpi-icon.success-bg { background: rgba(16,185,129,0.1); color: var(--accent); }
+.kpi-icon.accent-bg { background: rgba(37,99,235,0.1); color: var(--accent-2); }
+
+.kpi h4 {
+  margin: 0;
+  font-size: 14px;
+  color: var(--muted);
+}
+.kpi-number {
+  margin-top: 2px;
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--brand);
+}
+.kpi canvas {
+  height: 38px !important;
+  margin-top: 10px;
+}
+
+/* Sections */
+.grid-section.large-section {
+  grid-column: span 8;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+}
+.grid-section.side-section {
+  grid-column: span 4;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+.bottom-row-table {
+  grid-column: span 12;
+}
+
+/* Chart Cards */
+.chart-card canvas {
+  height: 200px !important;
+  max-height: 200px !important;
+}
+.card-header h4 {
+  margin: 0 0 10px;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--brand);
+}
+
+/* Tables */
+.table-card { display: flex; flex-direction: column; }
+.table-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+.table-header h4 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--brand);
+}
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.data-table th,
+.data-table td {
+  padding: 12px 14px;
+  text-align: left;
+}
+.data-table th {
+  background: #f8fafc;
+  color: var(--muted);
+  font-weight: 600;
+  border-bottom: 1px solid var(--border);
+}
+.data-table td {
+  border-bottom: 1px solid #f1f3f6;
+}
+.data-table tbody tr:last-child td { border-bottom: none; }
+.data-table tbody tr:hover { background: #fcfdfe; }
+.low-stock-row td { background: rgba(245,158,11,0.05); }
+.ai-reason {
+  max-width: 300px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--brand-light);
+  font-style: italic;
+}
+.warning-text { color: var(--warning); font-weight: 600; }
+
+/* Buttons */
+.btn {
+  background: var(--brand);
+  color: #fff;
+  border: none;
+  padding: 8px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 14px;
+  transition: background .15s ease;
+}
+.btn:hover { background: var(--brand-light); }
+.accent-btn { background: var(--accent); }
+.accent-btn:hover { background: #0d9472; }
+.muted {
+  color: var(--muted);
+  padding: 16px 14px;
+  text-align: center !important;
+  font-style: italic;
+}
+
+/* Responsive */
+@media (max-width: 1200px) {
+  .kpi-row { grid-template-columns: repeat(2, 1fr); }
+  .grid-section.large-section { grid-column: span 12; }
+  .grid-section.side-section {
+    grid-column: span 12;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media (max-width: 720px) {
+  .dashboard-grid,
+  .kpi-row,
+  .grid-section.large-section,
+  .grid-section.side-section {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  .kpi-row > *,
+  .grid-section.large-section > *,
+  .grid-section.side-section > * {
+    grid-column: span 1;
+  }
+}

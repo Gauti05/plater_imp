@@ -1,0 +1,240 @@
+<!-- <div class="page-container">
+  <div class="form-layout">
+    <div class="main-column">
+      <section class="card">
+        <h3 class="section-title">{{ isEdit ? 'Edit Order' : 'Add New Order' }}</h3>
+        
+        <div class="form-grid" style="border-bottom: 1px solid #eee; padding-bottom: 15px; margin-bottom: 15px;">
+          <div class="form-group">
+            <label>Customer Mobile</label>
+            <input type="text" [(ngModel)]="order.customerMobile" (blur)="loadCustomerByMobile(order.customerMobile)" placeholder="Enter Mobile" />
+          </div>
+          <div class="form-group">
+            <label>Customer Name</label>
+            <input type="text" [(ngModel)]="order.customerName" placeholder="Enter Name" />
+          </div>
+        </div>
+
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Table Number</label>
+            <input type="number" [(ngModel)]="order.tableNumber" />
+          </div>
+          <div class="form-group">
+            <label>Status</label>
+            <select [(ngModel)]="order.status">
+              <option *ngFor="let st of ['Open','In Progress','Ready','Paid','Cancelled']" [value]="st">
+                {{st}}
+              </option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Waiter</label>
+            <input type="text" [(ngModel)]="order.waiter" />
+          </div>
+          <div class="form-group">
+            <label>Payment Mode</label>
+            <select [(ngModel)]="order.paymentMode">
+              <option [ngValue]="null">—</option>
+              <option value="CASH">Cash</option>
+              <option value="CARD">Card</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Tax %</label>
+            <input type="number" [(ngModel)]="order.tax" (input)="recalculate()" />
+          </div>
+          <div class="form-group">
+            <label>Discount</label>
+            <input type="number" [(ngModel)]="order.discount" (input)="recalculate()" />
+          </div>
+        </div>
+      </section>
+
+      <section class="card">
+        <h3 class="section-title">Items</h3>
+        <table class="items-table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Price</th>
+              <th>Qty</th>
+              <th>Subtotal</th>
+              <th>Status</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (item of order.items; track item.id; let i = $index) {
+              <tr>
+                <td><input [(ngModel)]="item.name" /></td>
+                <td><input type="number" [(ngModel)]="item.price" (input)="recalculate()" /></td>
+                <td><input type="number" [(ngModel)]="item.quantity" (input)="recalculate()" /></td>
+                <td>{{ item.subtotal | currency:'INR' }}</td>
+                <td>
+                  <select [(ngModel)]="item.status">
+                    <option value="Pending">Pending</option>
+                    <option value="In Progress">In Progress</option>
+                    <option value="Ready">Ready</option>
+                    <option value="Served">Served</option>
+                  </select>
+                </td>
+                <td>
+                  <button (click)="removeItem(i)">✕</button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+        <button class="btn btn-secondary" (click)="addItem()">+ Add Item</button>
+      </section>
+
+      <section class="card">
+        <h3 class="section-title">Totals</h3>
+        <div class="cost-summary">
+          <div>Subtotal: {{ order.subtotal | currency:'INR' }}</div>
+          <div>Total: {{ order.total | currency:'INR' }}</div>
+        </div>
+      </section>
+    </div>
+
+    <aside class="side-column">
+      <section class="card card-actions-block">
+        <button class="btn btn-primary btn-block" (click)="save()">Save</button>
+        @if (order.status === 'Paid') {
+          <button class="btn btn-secondary btn-block" (click)="printInvoice()">
+            🧾 Print Invoice
+          </button>
+        }
+      </section>
+    </aside>
+  </div>
+</div> -->
+
+
+<div class="page-container">
+  <div class="form-layout">
+    <div class="main-column">
+      <section class="card">
+        <h3 class="section-title">{{ isEdit ? 'Edit Order' : 'Add New Order' }}</h3>
+        
+        <div class="form-grid" style="border-bottom: 1px solid #eee; padding-bottom: 15px; margin-bottom: 15px;">
+          <div class="form-group">
+            <label>Customer Mobile</label>
+            <input type="text" [(ngModel)]="order.customerMobile" (blur)="loadCustomerByMobile(order.customerMobile)" placeholder="Enter Mobile" />
+          </div>
+          <div class="form-group">
+            <label>Customer Name</label>
+            <input type="text" [(ngModel)]="order.customerName" placeholder="Enter Name" />
+          </div>
+        </div>
+
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Table Number</label>
+            <input type="number" [(ngModel)]="order.tableNumber" />
+          </div>
+          <div class="form-group">
+            <label>Status</label>
+            <select [(ngModel)]="order.status">
+              <option *ngFor="let st of ['Open','In Progress','Ready','Paid','Cancelled']" [value]="st">
+                {{st}}
+              </option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Waiter</label>
+            <input type="text" [(ngModel)]="order.waiter" />
+          </div>
+          <div class="form-group">
+            <label>Payment Mode</label>
+            <select [(ngModel)]="order.paymentMode">
+              <option [ngValue]="null">—</option>
+              <option value="CASH">Cash</option>
+              <option value="CARD">Card</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Tax %</label>
+            <input type="number" [(ngModel)]="order.tax" (input)="recalculate()" />
+          </div>
+          <div class="form-group">
+            <label>Discount</label>
+            <input type="number" [(ngModel)]="order.discount" (input)="recalculate()" />
+          </div>
+        </div>
+      </section>
+
+      <section class="card">
+        <h3 class="section-title">Items</h3>
+        <table class="items-table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Price</th>
+              <th>Qty</th>
+              <th>Subtotal</th>
+              <th>Status</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (item of order.items; track item.id; let i = $index) {
+              <tr>
+                <td>
+                  <input 
+                    list="inventoryList"
+                    [(ngModel)]="item.name" 
+                    (ngModelChange)="onItemNameChange(item)"
+                    placeholder="Type or select item..."
+                  />
+                </td>
+                <td><input type="number" [(ngModel)]="item.price" (input)="recalculate()" /></td>
+                <td><input type="number" [(ngModel)]="item.quantity" (input)="recalculate()" /></td>
+                <td>{{ item.subtotal | currency:'INR' }}</td>
+                <td>
+                  <select [(ngModel)]="item.status">
+                    <option value="Pending">Pending</option>
+                    <option value="In Progress">In Progress</option>
+                    <option value="Ready">Ready</option>
+                    <option value="Served">Served</option>
+                  </select>
+                </td>
+                <td>
+                  <button (click)="removeItem(i)">✕</button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+        <button class="btn btn-secondary" (click)="addItem()">+ Add Item</button>
+
+        <datalist id="inventoryList">
+          @for (inv of inventoryItems; track inv.id) {
+            <option [value]="inv.name || inv.title || inv.itemName"></option>
+          }
+        </datalist>
+
+      </section>
+
+      <section class="card">
+        <h3 class="section-title">Totals</h3>
+        <div class="cost-summary">
+          <div>Subtotal: {{ order.subtotal | currency:'INR' }}</div>
+          <div>Total: {{ order.total | currency:'INR' }}</div>
+        </div>
+      </section>
+    </div>
+
+    <aside class="side-column">
+      <section class="card card-actions-block">
+        <button class="btn btn-primary btn-block" (click)="save()">Save</button>
+        @if (order.status === 'Paid') {
+          <button class="btn btn-secondary btn-block" (click)="printInvoice()">
+            🧾 Print Invoice
+          </button>
+        }
+      </section>
+    </aside>
+  </div>
+</div>

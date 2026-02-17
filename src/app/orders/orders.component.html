@@ -1,0 +1,110 @@
+<div class="orders-page-container">
+  
+  <div class="page-header">
+    <h1 class="page-title">Order Management</h1>
+    
+    <div class="header-actions">
+      <div class="search-wrap">
+        <input type="text" placeholder="Search orders..." (input)="applyFilter($event)" class="search-input">
+      </div>
+      <a [routerLink]="'/' + storeSlug + '/orders/add'" class="btn-primary">+ New Order</a>
+    </div>
+  </div>
+
+  <div class="table-card">
+    <div class="table-responsive">
+      <app-dynamic-table
+        [data]="paginatedData"
+        [columns]="tableColumns"
+        [hasActions]="true"
+        [showPagination]="false"
+        (rowClick)="onRowClick($event)"
+      >
+        <ng-template #statusBadge let-row>
+          <span class="status-pill" [ngClass]="row.status?.toLowerCase()">
+            {{ row.status }}
+          </span>
+        </ng-template>
+
+        <ng-template #actions let-row>
+          <div class="action-buttons" (click)="$event.stopPropagation()">
+            @if (row.status === 'Paid') {
+              <button class="btn-icon warning" (click)="reopenOrder(row)">↩</button>
+            } @else if (row.status !== 'Cancelled') {
+              <button class="btn-icon success" (click)="markAsPaid(row)">✓</button>
+            }
+            <button class="btn-icon neutral" (click)="onRowClick(row)">✎</button>
+          </div>
+        </ng-template>
+      </app-dynamic-table>
+    </div>
+
+    <div class="pagination-footer">
+      <div class="page-info">
+        Showing <b>{{ (currentPage - 1) * itemsPerPage + 1 }}</b> - <b>{{ Math.min(currentPage * itemsPerPage, filteredData.length) }}</b> of <b>{{ filteredData.length }}</b>
+      </div>
+      
+      <div class="page-controls">
+        <div class="per-page">
+          <span>Rows:</span>
+          <select [(ngModel)]="itemsPerPage" (change)="onPageSizeChange()">
+            <option [value]="5">5</option>
+            <option [value]="10">10</option>
+            <option [value]="20">20</option>
+          </select>
+        </div>
+
+        <div class="nav-buttons">
+          <button class="nav-btn" [disabled]="currentPage === 1" (click)="changePage(currentPage - 1)">‹</button>
+          @for (page of visiblePages; track page) {
+            <button class="nav-btn" [class.active]="page === currentPage" (click)="changePage(page)">{{ page }}</button>
+          }
+          <button class="nav-btn" [disabled]="currentPage === totalPages" (click)="changePage(currentPage + 1)">›</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 
+<div class="orders-wrapper" [class.dark-mode-active]="isDarkMode">
+  
+  <div class="dark-backdrop" *ngIf="isDarkMode"></div>
+
+  <div class="orders-content">
+    
+    <div class="page-header">
+      <div class="header-left">
+        <h1 class="page-title">Orders</h1>
+      </div>
+      <div class="header-actions">
+        <button class="theme-toggle" (click)="toggleDarkMode()">
+          {{ isDarkMode ? '☀️' : '🌙' }}
+        </button>
+        <a [routerLink]="'/' + storeSlug + '/orders/add'" class="btn-primary">Add New Order</a>
+      </div>
+    </div>
+
+    <div class="orders-list-container">
+      <app-dynamic-table
+        [data]="ordersData"
+        [columns]="tableColumns"
+        [hasActions]="true"
+        (rowClick)="onRowClick($event)"
+      >
+        <ng-template #actions let-row>
+          <div class="action-buttons-wrapper" (click)="$event.stopPropagation()">
+            @if (row.status === 'Paid') {
+              <button class="btn btn-warning btn-small" (click)="reopenOrder(row)">Reopen</button>
+            } @else if (row.status !== 'Cancelled') {
+              <button class="btn btn-success btn-small" (click)="markAsPaid(row)">Mark Paid</button>
+            } @else {
+              <span class="text-muted">—</span>
+            }
+          </div>
+        </ng-template>
+      </app-dynamic-table>
+    </div>
+
+  </div>
+</div> -->

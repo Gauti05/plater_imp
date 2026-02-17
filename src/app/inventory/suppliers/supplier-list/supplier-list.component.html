@@ -1,0 +1,12 @@
+<app-dynamic-table
+  [data]="suppliers"
+  [columns]="columns"
+  [filters]="filters"
+  [hasActions]="true"
+  [buttonLabel]="'Add Supplier'"
+  [buttonRoute]="'/' + storeSlug + '/inventory/add-supplier'"
+  [rowRouteBase]="'/' + storeSlug + '/inventory/edit-supplier'"
+  rowIdField="id"
+  (rowClick)="onRowClick($event)"
+  (bulkDelete)="handleDelete($event)">
+</app-dynamic-table>

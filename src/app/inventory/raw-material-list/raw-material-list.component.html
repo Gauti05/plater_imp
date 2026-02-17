@@ -1,0 +1,20 @@
+@if (isLoadingState) {
+  <div class="loading-state-message" style="text-align: center; padding: 50px; font-size: 1.2em; color: #64748b;">
+    Loading previous table settings...
+  </div>
+} @else {
+  <app-dynamic-table
+    [data]="rawMaterials"
+    [columns]="columns"
+    [filters]="filters"
+    [hasActions]="true"
+    [buttonLabel]="'Add Raw Material'"
+    [buttonRoute]="'/' + storeSlug + '/inventory/add-raw-material'"
+    [rowRouteBase]="'/' + storeSlug + '/inventory/edit-raw-material'"
+    rowIdField="id"
+    [initialState]="tableState"
+    (stateChange)="saveTableState($event)"
+    (bulkDelete)="handleBulkDelete($event)">
+    
+    </app-dynamic-table>
+}

@@ -1,0 +1,118 @@
+/* =====================================================
+   🚀 INVENTORY DASHBOARD (Global Dark Mode Fix)
+   ===================================================== */
+
+/* 1. We attach the variables to the container so they pass through the <router-outlet> */
+.inventory-container {
+  --brand: var(--primary);
+  --brand-light: var(--primary-hover);
+  --muted: var(--text-muted);
+  --accent: #10B981;
+  --accent-2: #2563eb;
+  --warning: #f59e0b;
+
+  /* These will automatically swap when Dark Mode is active */
+  --card-bg: var(--bg-surface);
+  --border-color: var(--border);
+  --bg: var(--bg-main);
+  --shadow: var(--shadow-md);
+
+  color: var(--text-main);
+  min-height: 100vh;
+}
+
+/* --- Navigation --- */
+.icon-nav { display: flex; gap: 16px; margin-bottom: 24px; flex-wrap: wrap; }
+
+.nav-item {
+  display: flex; align-items: center; gap: 8px; padding: 10px 16px;
+  border-radius: 12px;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  color: var(--muted);
+  cursor: pointer; font-weight: 600; font-size: 14px;
+  transition: all .2s ease;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
+}
+.nav-item .material-icons { font-size: 20px; }
+.nav-item:hover { transform: translateY(-2px); box-shadow: var(--shadow); background: var(--bg-hover); }
+.nav-item.active {
+  background: var(--brand); color: #ffffff; border-color: var(--brand);
+  transform: translateY(0); box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+}
+
+/* --- Dashboard Grid & Sections --- */
+.dashboard-grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 20px; }
+.kpi-row { grid-column: span 12; display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }
+.grid-section.large-section { grid-column: span 8; display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
+.grid-section.side-section { grid-column: span 4; display: flex; flex-direction: column; gap: 20px; }
+.bottom-row-table { grid-column: span 12; }
+
+/* --- Card Styles --- */
+.card {
+  background: var(--card-bg);
+  border-radius: 16px; border: 1px solid var(--border-color);
+  padding: 20px; box-shadow: var(--shadow); transition: all .2s ease;
+}
+
+/* --- KPI Cards --- */
+.kpi { padding: 18px; }
+.kpi .kpi-top { display: flex; gap: 12px; align-items: center; }
+.kpi-icon { display: inline-flex; align-items: center; justify-content: center; width: 50px; height: 50px; border-radius: 10px; font-size: 24px; }
+
+/* KPI icon background colors (Dark Mode Safe) */
+.kpi-icon.brand-bg { background: rgba(37, 99, 235, 0.1); color: var(--brand); }
+.kpi-icon.warning-bg { background: rgba(245, 158, 11, 0.1); color: var(--warning); }
+.kpi-icon.success-bg { background: rgba(16, 185, 129, 0.1); color: var(--accent); }
+.kpi-icon.accent-bg { background: rgba(37, 99, 235, 0.1); color: var(--accent-2); }
+
+.kpi h4 { margin: 0; font-size: 14px; color: var(--muted); font-weight: 500; }
+.kpi-number { margin-top: 2px; font-size: 24px; font-weight: 800; color: var(--text-main); }
+.kpi canvas { height: 38px !important; max-height: 38px !important; margin-top: 10px; }
+
+/* --- Chart Cards --- */
+.chart-card { height: 100%; }
+.card-header h4 { margin: 0 0 10px 0; font-size: 16px; font-weight: 700; color: var(--text-main); }
+.chart-card canvas { height: 200px !important; max-height: 200px !important; }
+.wide-chart { grid-column: span 1; }
+.large-table, .full-width-table { grid-column: span 2; }
+
+/* --- Table Cards --- */
+.table-card { display: flex; flex-direction: column; }
+.table-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+.table-header h4 { margin: 0; color: var(--text-main); font-size: 16px; font-weight: 700; }
+
+.data-table { width: 100%; border-collapse: collapse; font-size: 13px; border-radius: 10px; overflow: hidden; }
+.data-table th, .data-table td { padding: 12px 14px; text-align: left; }
+.data-table th { background: var(--bg); color: var(--muted); font-weight: 600; border-bottom: 1px solid var(--border-color); text-transform: uppercase; }
+.data-table td { border-bottom: 1px solid var(--border-color); color: var(--text-main); }
+.data-table tbody tr:last-child td { border-bottom: none; }
+.data-table tbody tr:hover td { background: var(--bg-hover); }
+.low-stock-row td { background: rgba(245, 158, 11, 0.1); }
+
+.ai-reason { max-width: 300px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--brand-light); font-style: italic; }
+.warning-text { color: var(--warning); font-weight: 600; }
+
+/* --- Buttons --- */
+.btn { background: var(--brand); color: #fff; border: none; padding: 8px 14px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 14px; transition: background .15s ease; }
+.btn:hover { background: var(--brand-light); }
+.accent-btn { background: var(--accent); }
+.accent-btn:hover { background: #0d9472; }
+.muted { color: var(--muted); padding: 16px 14px; text-align: center !important; font-style: italic; }
+
+/* --- Responsiveness --- */
+@media (max-width: 1200px) {
+  .kpi-row { grid-template-columns: repeat(2, 1fr); }
+  .grid-section.large-section { grid-column: span 12; }
+  .grid-section.large-section > * { grid-column: span 1; }
+  .grid-section.side-section { grid-column: span 12; display: grid; grid-template-columns: repeat(2, 1fr); }
+  .large-table, .full-width-table { grid-column: span 2; }
+  .wide-chart { grid-column: span 1; }
+}
+
+@media (max-width: 720px) {
+  .inventory-container { padding: 10px; }
+  .dashboard-grid, .kpi-row, .grid-section.large-section, .grid-section.side-section { grid-template-columns: repeat(1, 1fr); gap: 12px; }
+  .kpi-row > *, .grid-section.large-section > *, .grid-section.side-section > * { grid-column: span 1; }
+  .nav-item { padding: 8px 10px; font-size: 13px; }
+}

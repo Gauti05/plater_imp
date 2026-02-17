@@ -1,0 +1,278 @@
+<div class="reports-shell">
+  <div class="sheet card">
+    <div class="sheet-row">
+      <div class="title-wrap">
+        <h1>Smart Reports</h1>
+        <p class="sub">Data-driven insights for your business</p>
+      </div>
+
+      <div class="control-row">
+        <div class="control-group">
+          <label>Report</label>
+          <select [(ngModel)]="reportType" (ngModelChange)="setReportType($event)">
+            <option value="sales-summary">Sales Summary</option>
+            <option value="leads-summary">Leads Summary</option>
+            <option value="inventory-snapshot">Inventory Snapshot</option>
+            <option value="category-performance">Category Performance</option>
+            <option value="daily-log">Daily Log</option>
+          </select>
+        </div>
+
+        <div class="control-group">
+          <label>Group by</label>
+          <select [(ngModel)]="groupBy" (ngModelChange)="setGroupBy($event)">
+            <option value="day">Day</option>
+            <option value="week">Week</option>
+            <option value="month">Month</option>
+          </select>
+        </div>
+
+        <div class="control-group">
+          <label>From</label>
+          <input type="date" [(ngModel)]="startStr" (change)="onDateChange()">
+        </div>
+
+        <div class="control-group">
+          <label>To</label>
+          <input type="date" [(ngModel)]="endStr" (change)="onDateChange()">
+        </div>
+
+        <div class="presets">
+          <button class="btn ghost" (click)="setPresetDays(7)">Last 7d</button>
+          <button class="btn ghost" (click)="setPresetDays(30)">Last 30d</button>
+          <button class="btn ghost" (click)="setPresetDays(90)">Last 90d</button>
+        </div>
+
+        <div class="spacer"></div>
+
+        <div class="toolbar">
+          <div class="search-wrap">
+            <span class="lens">🔎</span>
+            <input class="search" placeholder="Search rows…" [(ngModel)]="tableQuery">
+          </div>
+
+          <div class="menu">
+            <div class="dropdown" [class.open]="colPickerOpen">
+              <button class="btn secondary" (click)="toggleColPicker()">
+                <span class="icon">🧱</span>Columns
+              </button>
+              @if (colPickerOpen && rows.length) {
+                <div class="dropdown-panel">
+                  <div class="dd-title">Visible Columns</div>
+                  <div class="dd-list">
+                    @for (c of (rows[0] | keyvalue); track c.key) {
+                      <label class="chk">
+                        <input
+                          type="checkbox"
+                          [checked]="isColVisible(c.key)"
+                          (change)="onColumnToggleChange(c.key, $event)"
+                        />
+                        <span>{{ c.key }}</span>
+                      </label>
+                    }
+                  </div>
+                  <div class="dd-actions">
+                    <button class="btn ghost" (click)="showAllColumns()">Show all</button>
+                    <button class="btn ghost" (click)="hideAllColumns()">Hide all</button>
+                  </div>
+                </div>
+              }
+            </div>
+
+            <div class="dropdown" [class.open]="presetOpen">
+              <button class="btn secondary" (click)="presetOpen = !presetOpen">
+                <span class="icon">💾</span>Presets
+              </button>
+              @if (presetOpen) {
+                <div class="dropdown-panel wide">
+                  <div class="dd-title">Save current setup</div>
+                  <div class="preset-save">
+                    <input placeholder="Preset name" [(ngModel)]="presetName">
+                    <button class="btn primary" (click)="savePreset()">Save</button>
+                  </div>
+                  <div class="dd-title mt8">Your presets</div>
+                  <div class="dd-list vertical">
+                    @for (p of presetList; track p) {
+                      <div class="preset-row">
+                        <button class="btn ghost" (click)="loadPreset(p)">{{ p }}</button>
+                        <button class="btn secondary danger" (click)="deletePreset(p)">Delete</button>
+                      </div>
+                    }
+                    @if (!presetList.length) { <div class="muted">No presets yet.</div> }
+                  </div>
+                </div>
+              }
+            </div>
+          </div>
+
+          <div class="actions">
+            <button class="btn secondary" (click)="showAiPanel = !showAiPanel">
+              <span class="icon">✨</span>{{ showAiPanel ? 'Hide AI' : 'AI Search' }}
+            </button>
+            <button class="btn primary" (click)="exportCSV()">Export CSV</button>
+            <button class="btn secondary" (click)="printPDF()">Print / PDF</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  @if (showAiPanel) {
+    <div class="ai card">
+      <div class="ai-head">
+        <div class="ai-title">
+          <span class="spark">✨</span>
+          <div>
+            <h3>Ask AI for a report</h3>
+            <p class="muted">Describe what you want. We’ll configure the report automatically.</p>
+          </div>
+        </div>
+        @if (aiPlan) {
+          <div class="ai-plan">
+            <span class="pill">Plan</span>
+            <div class="plan-pairs">
+              <div><b>Type</b><span>{{ aiPlan.reportType }}</span></div>
+              <div><b>Group</b><span>{{ aiPlan.groupBy || 'day' }}</span></div>
+              <div><b>Range</b><span>{{ aiPlan.timeRange.preset || (aiPlan.timeRange.start + ' → ' + aiPlan.timeRange.end) }}</span></div>
+            </div>
+          </div>
+        }
+      </div>
+
+      <div class="ai-body">
+        <div class="prompt">
+          <textarea
+            rows="2"
+            [(ngModel)]="aiPrompt"
+            placeholder="e.g., how did total sales and leads compare last month?">
+          </textarea>
+          <div class="chips">
+            @for (s of aiSuggestions; track s) {
+              <button class="chip" (click)="aiPrompt = s">{{ s }}</button>
+            }
+          </div>
+        </div>
+
+        <div class="ai-actions">
+          <button class="btn primary big" [disabled]="aiLoading" (click)="aiSearchReport(aiPrompt)">
+            {{ aiLoading ? 'Thinking…' : 'Generate with AI' }}
+          </button>
+        </div>
+
+        @if (aiNarrativeMd) {
+          <div class="ai-narrative">
+            <h4>AI Narrative</h4>
+            <div class="md" [innerHTML]="aiNarrativeMd"></div>
+          </div>
+        }
+      </div>
+    </div>
+  }
+
+  <div class="kpis">
+    @if (reportType === 'sales-summary') {
+      <div class="kpi card"><div class="k-label">Total Sales</div><div class="k-value">₹{{ kpi.sales | number:'1.0-0' }}</div></div>
+      <div class="kpi card"><div class="k-label">Total Orders</div><div class="k-value">{{ kpi.orders }}</div></div>
+      <div class="kpi card"><div class="k-label">Average Order Value</div><div class="k-value">₹{{ kpi.aov | number:'1.0-0' }}</div></div>
+      <div class="kpi card"><div class="k-label">Top Category</div><div class="k-value small">{{ kpi.topCategory }}</div></div>
+    }
+    @else if (reportType === 'leads-summary') {
+      <div class="kpi card"><div class="k-label">Total Leads</div><div class="k-value">{{ kpi.leads }}</div></div>
+      <div class="kpi card"><div class="k-label">Qualified Leads</div><div class="k-value">{{ kpi.qualifiedLeads }}</div></div>
+      <div class="kpi card"><div class="k-label">Lead Conversion Rate</div><div class="k-value">{{ kpi.conversionRate | number:'1.0-1' }}%</div></div>
+      <div class="kpi card"><div class="k-label">Best Day</div><div class="k-value small">{{ kpi.bestDay }}</div></div>
+    }
+    @else if (reportType === 'inventory-snapshot') {
+      <div class="kpi card"><div class="k-label">Total Stock</div><div class="k-value">{{ kpi.totalStock }}</div></div>
+      <div class="kpi card"><div class="k-label">Low Stock (≤5)</div><div class="k-value">{{ kpi.lowStock }}</div></div>
+      <div class="kpi card"><div class="k-label">Sold This Period</div><div class="k-value">{{ kpi.soldThisPeriod }}</div></div>
+      <div class="kpi card"><div class="k-label">Top Selling Product</div><div class="k-value small">{{ kpi.topSellingProduct }}</div></div>
+    }
+    @else if (reportType === 'category-performance') {
+       <div class="kpi card"><div class="k-label">Top Category</div><div class="k-value small">{{ kpi.topCategory }}</div></div>
+       <div class="kpi card"><div class="k-label">Total Category Sales</div><div class="k-value">₹{{ kpi.categorySales | number:'1.0-0' }}</div></div>
+    }
+    @else if (reportType === 'daily-log') {
+       <div class="kpi card"><div class="k-label">Total Log Entries</div><div class="k-value">{{ rows.length }}</div></div>
+       <div class="kpi card"><div class="k-label">Total Sales</div><div class="k-value">₹{{ kpi.sales | number:'1.0-0' }}</div></div>
+       <div class="kpi card"><div class="k-label">Total Leads</div><div class="k-value">{{ kpi.leads }}</div></div>
+       <div class="kpi card"><div class="k-label">Total Inventory</div><div class="k-value">{{ kpi.totalStock }}</div></div>
+    }
+  </div>
+
+  @if (reportType !== 'inventory-snapshot') {
+    <div class="chart card">
+      <div class="card-head">
+        <h3>{{ labelForType(reportType) }} Trend</h3>
+        <span class="muted">{{ labelForGroup(groupBy) }}</span>
+      </div>
+      <div class="chart-wrap">
+        @if (salesTrendData.labels?.length) {
+          <canvas baseChart [data]="salesTrendData" [options]="salesTrendOptions" chartType="line"></canvas>
+        } @else {
+          <div class="empty">No trend data in the selected range.</div>
+        }
+      </div>
+    </div>
+  }
+
+  <div class="card data-with-inspector">
+    <div class="card-head">
+      <h3>{{ labelForType(reportType) }} Data</h3>
+      <span class="muted">Ready to export</span>
+    </div>
+
+    @if (loading) {
+      <div class="skeleton">
+        <div class="row"></div><div class="row"></div><div class="row"></div><div class="row short"></div>
+      </div>
+    } @else {
+      <div class="table-inspector">
+        <div class="table-wrap">
+          @if (filteredRows().length) {
+            <table>
+              <thead>
+                <tr>
+                  @for (col of (rows[0] | keyvalue); track col.key) {
+                    @if (isColVisible(col.key)) { <th>{{ col.key }}</th> }
+                  }
+                </tr>
+              </thead>
+              <tbody>
+                @for (row of filteredRows(); track row) {
+                  <tr (click)="selectRow(row)" [class.active]="row === selectedRow">
+                    @for (col of (rows[0] | keyvalue); track col.key) {
+                      @if (isColVisible(col.key)) { <td>{{ row[col.key] }}</td> }
+                    }
+                  </tr>
+                }
+              </tbody>
+            </table>
+          } @else {
+            <div class="empty big">No data in the selected range.</div>
+          }
+        </div>
+
+        @if (selectedRow) {
+          <aside class="inspector">
+            <div class="insp-head">
+              <div class="insp-title">Inspector</div>
+              <button class="btn ghost tiny" (click)="selectedRow = null">Close</button>
+            </div>
+            <div class="insp-body">
+              @for (col of (rows[0] | keyvalue); track col.key) {
+                @if (isColVisible(col.key)) {
+                  <div class="kv">
+                    <div class="k">{{ col.key }}</div>
+                    <div class="v">{{ selectedRow[col.key] }}</div>
+                    <button class="copy" (click)="copyCell(selectedRow[col.key])">Copy</button>
+                  </div>
+                }
+              }
+            </div>
+          </aside>
+        }
+      </div>
+    }
+  </div>
+</div>

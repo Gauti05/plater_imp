@@ -1,0 +1,12 @@
+<app-dynamic-table
+  [data]="modifiers"
+  [columns]="columns"
+  [filters]="filters"
+  [hasActions]="true"
+  [buttonLabel]="'Add Modifier'"
+  [buttonRoute]="'/' + storeSlug + '/inventory/add-modifier'"
+  [rowRouteBase]="'/' + storeSlug + '/inventory/edit-modifier'"
+  rowIdField="id"
+  (rowClick)="onRowClick($event)"
+  (bulkDelete)="handleDelete($event)">
+</app-dynamic-table>

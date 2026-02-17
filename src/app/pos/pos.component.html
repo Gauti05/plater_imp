@@ -1,0 +1,481 @@
+<div class="pos-fullscreen-root">
+
+  <header class="pos-header">
+    <div class="header-left">
+      <button class="btn ghost" (click)="exitToDashboard()" title="Exit">
+        <span style="font-size:18px;">⟵</span>
+      </button>
+      <div class="brand-title">{{ storeSlug || 'Store' | titlecase }} POS</div>
+
+      <button class="btn outline running-btn" (click)="toggleRunningOrders()">
+        Running Orders
+        @if (runningOrders.length > 0) {
+          <span class="badge-count">{{ runningOrders.length }}</span>
+        }
+      </button>
+    </div>
+    
+    <div class="header-center">
+      <nav class="workspace-tabs">
+        <button class="nav-tab" [class.active]="activeTab==='menu'" (click)="activeTab='menu'">Menu</button>
+        <button class="nav-tab" [class.active]="activeTab==='tables'" (click)="activeTab='tables'">Tables</button>
+        <button class="nav-tab" [class.active]="activeTab==='orders'" (click)="activeTab='orders'">Kitchen View</button>
+      </nav>
+    </div>
+
+    <div class="header-right">
+      <div class="btn-group">
+        <button class="btn" [class.primary]="orderType==='Takeaway'" [class.ghost]="orderType!=='Takeaway'" (click)="startTakeaway()">Takeaway</button>
+        <button class="btn" [class.primary]="orderType==='Dine-in'" [class.ghost]="orderType!=='Dine-in'" (click)="orderType='Dine-in'">Dine-in</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="pos-layout">
+
+    <main class="pos-workspace">
+
+      @if (activeTab === 'menu') {
+        <section class="menu-section-full">
+          
+          <div class="content-header menu-header">
+            <div class="menu-header-left">
+              <h2>Menu</h2>
+              <div class="search-wrapper">
+                <input type="search" 
+                       class="local-search-bar" 
+                       placeholder="Search menu items..." 
+                       (input)="onSearchChange($any($event.target).value)" />
+              </div>
+            </div>
+            </div>
+
+          <div class="menu-view-layout">
+            
+            <div class="category-sidebar">
+              <button class="cat-btn" 
+                      [class.active]="activeCategory === 'All'"
+                      (click)="filterByCategory('All')">
+                All
+              </button>
+              @for (c of categories; track c) {
+                @if (c !== 'All') {
+                  <button class="cat-btn" 
+                          [class.active]="activeCategory === c"
+                          (click)="filterByCategory(c)">
+                    {{ c | titlecase }}
+                  </button>
+                }
+              }
+            </div>
+
+            <div class="menu-items-scroll">
+              <div class="grid-container menu-grid">
+                @for (item of filteredMenuItems; track item.id) {
+                  <div class="menu-item-card"
+                       [class.disabled]="item.trackInventory && item.totalServingsInInventory===0"
+                       (click)="addItemFromCard(item)">
+
+                    <img [src]="item.imageUrl || 'https://placehold.co/400x300/f3f4f6/a1a1aa?text=No+Image'" class="menu-img" alt="{{item.name}}">
+
+                    <div class="menu-details">
+                      <div>
+                        <div class="menu-name" style="display: flex; justify-content: space-between; align-items: flex-start; gap: 4px;">
+                          <span>{{ item.name }}</span>
+                          @if (getDietType(item) === 'veg') {
+                            <span class="diet-icon veg" title="Veg"></span>
+                          } @else if (getDietType(item) === 'non-veg') {
+                            <span class="diet-icon non-veg" title="Non-Veg"></span>
+                          }
+                        </div>
+
+                        @if (item.trackInventory) {
+                          <div class="stock-badge"
+                               [class.low]="(item.totalServingsInInventory||0) <= 5"
+                               [class.out]="(item.totalServingsInInventory||0) === 0">
+                            {{ item.totalServingsInInventory === 0 ? 'Out of Stock' : (item.totalServingsInInventory + ' left') }}
+                          </div>
+                        }
+                      </div>
+                      <div class="menu-meta">
+                        <span class="text-muted">{{ item.category }}</span>
+                        <span class="menu-price">{{ item.price | currency:'INR' }}</span>
+                      </div>
+                    </div>
+                  </div>
+                }
+              </div>
+            </div>
+          </div>
+        </section>
+      }
+
+      @if (activeTab === 'tables') {
+        <section class="standard-section">
+          <div class="content-header">
+            <h2>Dine-in Tables</h2>
+          </div>
+
+          <div class="grid-container table-grid mt-2">
+            @for (table of tables; track table.id) {
+              <div class="table-card"
+                   [class.occupied]="table.isOccupied"
+                   [class.active]="activeTable?.id === table.id"
+                   (click)="selectOrCreateTable(table)">
+                
+                <div *ngIf="activeTable?.id === table.id" class="table-actions-overlay" (click)="$event.stopPropagation()">
+                   <button class="btn ghost small" (click)="openTableModal(table)">Edit</button>
+                   <button class="btn ghost small text-danger" (click)="deleteTable(table.id)">Del</button>
+                </div>
+
+                <div class="t-num">T-{{ table.number }}</div>
+                <div class="t-cap">Cap: {{ table.capacity }}</div>
+                <div class="t-status">{{ table.status }}</div>
+                @if (table.waiter) {
+                  <div style="font-size:10px; margin-top:4px; color:#6b7280;">{{ table.waiter }}</div>
+                }
+              </div>
+            }
+          </div>
+        </section>
+      }
+
+      @if (activeTab === 'orders') {
+        <section class="standard-section ">
+          <div class="content-header">
+            <h2>Kitchen Status</h2>
+          </div>
+
+          <div class="orders-list-grid mt-2">
+            @if (activeOrders.length === 0) {
+              <div class="text-muted" style="text-align:center; padding:30px;">
+                No active orders in kitchen.
+              </div>
+            }
+
+            @for (ord of activeOrders; track ord.id) {
+              <div class="kitchen-card">
+                <div class="k-info">
+                  <h4>{{ ord.customerName || 'Guest' }} <span style="font-weight:400">({{ord.orderType}})</span></h4>
+                  <div class="k-meta">
+                    @if (ord.tableNumber) { <span>Table {{ ord.tableNumber }} • </span> }
+                    {{ getTimer(ord) }} ago • {{ ord.total | currency:'INR' }}
+                  </div>
+                  <div class="k-items">
+                    @for (it of ord.items; track it.id) {
+                      <div class="k-item-row">
+                        <span style="display: flex; align-items: center; gap: 4px;">
+                          @if (getDietType(it) === 'veg') {
+                            <span class="diet-icon veg" title="Veg"></span>
+                          } @else if (getDietType(it) === 'non-veg') {
+                            <span class="diet-icon non-veg" title="Non-Veg"></span>
+                          }
+                          {{ it.name }} x{{it.quantity}}
+                        </span>
+                        <span class="text-muted" style="font-size:11px;">{{ it.status }}</span>
+                      </div>
+                    }
+                  </div>
+                </div>
+                <div class="k-actions">
+                  <button class="btn outline" (click)="resumeDraft(ord)">View</button>
+                  <button class="btn success" (click)="markAsPaid(ord)">Paid</button>
+                  <button class="btn ghost" (click)="printCurrentInvoice(undefined, ord)">Print</button>
+                </div>
+              </div>
+            }
+          </div>
+        </section>
+      }
+
+    </main>
+
+    <aside class="pos-cart">
+      <div class="cart-header">
+        <h3 style="margin:0; font-size:18px;">Current Order</h3>
+        <div class="cart-context">
+          {{ orderType }}
+          @if (activeTable) { <span>• Table {{ activeTable.number }}</span> }
+        </div>
+      </div>
+
+      <div class="cart-body">
+        @if (cart.length === 0) {
+          <div class="cart-empty">
+            <div>Your cart is empty</div>
+            <small>Select items from the menu</small>
+            
+            @if (suggestedItems.length > 0) {
+               <div style="margin-top:20px; text-align:left; width:100%;">
+                 <strong style="font-size:12px; color:#666;">Suggested:</strong>
+                 <div class="suggestion-chips">
+                   @for(sug of suggestedItems; track sug.id) {
+                     <span class="chip" (click)="addItemFromCard(sug)">{{sug.name}}</span>
+                   }
+                 </div>
+               </div>
+            }
+
+          </div>
+        } @else {
+          @for (item of cart; track item.id + item.name + item.subtotal) {
+            <div class="cart-item">
+              <div class="cart-item-info">
+                <div class="ci-name" style="display: flex; align-items: center; gap: 6px;">
+                  @if (getDietType(item) === 'veg') {
+                    <span class="diet-icon veg" title="Veg"></span>
+                  } @else if (getDietType(item) === 'non-veg') {
+                    <span class="diet-icon non-veg" title="Non-Veg"></span>
+                  }
+                  <span>{{ item.name }}</span>
+                </div>
+                
+                @if (item.modifiers?.length) {
+                  <div class="ci-mods">{{ getCartItemModifierSummary(item) }}</div>
+                }
+                <div class="ci-item-price-detail">
+                  {{ item.price | currency:'INR' }} 
+                  @if (item.taxRate > 0) { <small>(+{{ item.taxRate }}% Tax)</small> }
+                </div>
+              </div>
+              <div class="cart-item-actions">
+                <div class="qty-stepper">
+                  <button (click)="updateCartItemQuantity(item, item.quantity - 1)">-</button>
+                  <span>{{ item.quantity }}</span>
+                  <button (click)="updateCartItemQuantity(item, item.quantity + 1)">+</button>
+                </div>
+                <div class="ci-subtotal">{{ item.subtotal | currency:'INR' }}</div>
+                <button class="btn-remove" (click)="removeItemFromCart(item)">✕</button>
+              </div>
+            </div>
+          }
+        }
+      </div>
+
+      <div class="cart-footer">
+        <div class="summary-row">
+          <span>Subtotal</span>
+          <span>{{ getCartSubtotal() | currency:'INR' }}</span>
+        </div>
+        <div class="summary-row">
+          <span class="discount-trigger" (click)="openCheckoutPanel()">Discount ({{ discountType === 'percentage' ? discountAmount + '%' : (discountAmount | currency:'INR') }})</span>
+          <span class="text-success">-{{ getCartDiscount() | currency:'INR' }}</span>
+        </div>
+        <div class="summary-row">
+          <span>Total Tax</span>
+          <span>{{ getCartTax() | currency:'INR' }}</span>
+        </div>
+        <div class="total-row">
+          <span>Total</span>
+          <span>{{ getCartTotal() | currency:'INR' }}</span>
+        </div>
+
+        <div class="cart-btns">
+          <button class="btn outline" (click)="saveDraft()" [disabled]="cart.length===0">Save Draft</button>
+          
+          <button class="btn primary" (click)="openCheckoutPanel()" [disabled]="cart.length===0">
+            Charge {{ getCartTotal() | currency:'INR' }}
+            <span class="btn-shortcut">Ctrl+Enter</span>
+          </button>
+
+        </div>
+        <div style="margin-top:8px;">
+          <button class="btn ghost" style="width:100%" (click)="cart=[]" [disabled]="cart.length===0">
+            Clear Cart <span class="btn-shortcut">Shift+Backspace</span>
+          </button>
+        </div>
+      </div>
+    </aside>
+
+  </div>
+
+  @if (showRunningOrdersPanel) {
+    <div class="backdrop" (click)="toggleRunningOrders()"></div>
+    <div class="slide-panel left" [class.open]="showRunningOrdersPanel">
+      <div class="panel-head">
+        <h3>Running Orders</h3>
+        <button class="btn ghost" (click)="toggleRunningOrders()">✕</button>
+      </div>
+      <div class="panel-body">
+        @if (runningOrders.length === 0) {
+          <div class="text-muted center" style="text-align:center;">No running orders</div>
+        }
+        @for (ord of runningOrders; track ord.id) {
+          <div class="ro-item"
+               [style.border-left]="ord.status==='Draft' ? '3px solid orange' : '3px solid var(--primary)'"
+               (click)="resumeDraft(ord); toggleRunningOrders()">
+            <div class="ro-top">
+              <span>{{ ord.customerName || 'Guest' }}</span>
+              <span>{{ ord.total | currency:'INR' }}</span>
+            </div>
+            <div class="ro-btm">
+              <span>{{ ord.orderType }} <span *ngIf="ord.tableNumber">• T-{{ord.tableNumber}}</span></span>
+              <span>{{ getTimer(ord) }}</span>
+            </div>
+            <div style="font-size:10px; margin-top:4px; color:#6b7280;">{{ ord.status }}</div>
+          </div>
+        }
+      </div>
+    </div>
+  }
+
+  @if (showAddItemPanel) {
+    <div class="backdrop" (click)="closeAddItemPanel()"></div>
+    <div class="slide-panel right" [class.open]="showAddItemPanel">
+      <div class="panel-head">
+        <h3>Customize Item</h3>
+        <button class="btn ghost" (click)="closeAddItemPanel()">✕</button>
+      </div>
+      <div class="panel-body">
+        <div style="margin-bottom:20px;">
+          <h4 style="margin:0;">{{ modalMenuItem?.name }}</h4>
+          <span class="text-muted">{{ modalMenuItem?.price | currency:'INR' }} Base Price</span>
+        </div>
+
+        <div class="form-group">
+          <label>Quantity</label>
+          <div style="display:flex; align-items:center; gap:10px;">
+            <button class="btn outline" (click)="modalQuantity = modalQuantity > 1 ? modalQuantity - 1 : 1">-</button>
+            <input type="number" [(ngModel)]="modalQuantity" style="width:60px; text-align:center;">
+            <button class="btn outline" (click)="modalQuantity = modalQuantity + 1">+</button>
+          </div>
+        </div>
+
+        @if (modalMenuItem?.modifiers?.length) {
+          <div>
+            @for (modId of modalMenuItem?.modifiers; track modId) {
+              @if (getModifierById(modId); as mod) {
+                 <div class="mod-group">
+                  <div class="mod-title">
+                    {{ mod.name }}
+                    @if (mod.type === 'variation') { <span>(Select 1)</span> }
+                  </div>
+                  <div class="mod-opts">
+                    @for (opt of mod.options; track opt.label) {
+                      <button class="mod-btn"
+                              [class.selected]="mod.type==='variation' ? isVariationSelected(modId, opt.label) : isAddonSelected(modId, opt.label)"
+                              (click)="mod.type==='variation' ? selectVariation(mod, opt) : toggleAddon(mod, opt)">
+                        {{ opt.label }} (+{{ opt.price }})
+                      </button>
+                    }
+                  </div>
+                </div>
+              }
+            }
+          </div>
+        }
+      </div>
+      <div class="panel-foot">
+        <div style="margin-right:auto; font-weight:bold; font-size:16px;">
+          {{ computeModalPrice() | currency:'INR' }}
+        </div>
+        <button class="btn ghost" (click)="closeAddItemPanel()">Cancel</button>
+        <button class="btn primary" (click)="confirmAddToCart()">Add to Cart</button>
+      </div>
+    </div>
+  }
+
+  @if (showCheckoutPanel) {
+    <div class="backdrop" (click)="closeCheckoutPanel()"></div>
+    <div class="slide-panel right" [class.open]="showCheckoutPanel">
+      <div class="panel-head">
+        <h3>Checkout</h3>
+        <button class="btn ghost" (click)="closeCheckoutPanel()">✕</button>
+      </div>
+      <div class="panel-body">
+
+        <div class="form-group">
+          <label>Customer Mobile <span class="text-danger">*</span></label>
+          <input type="text" [(ngModel)]="checkoutCustomerMobile" (blur)="loadCustomerByMobile(checkoutCustomerMobile)" placeholder="9876543210" style="width:100%">
+          @if (mobileError) { <small class="text-danger">{{ mobileError }}</small> }
+        </div>
+        <div class="form-group">
+          <label>Customer Name</label>
+          <input type="text" [(ngModel)]="checkoutCustomerName" placeholder="John Doe" style="width:100%">
+        </div>
+        @if (orderType === 'Dine-in') {
+          <div class="form-group">
+            <label>Waiter</label>
+            <input type="text" [(ngModel)]="checkoutWaiter" placeholder="Waiter Name" style="width:100%">
+          </div>
+        }
+
+        <hr style="border:0; border-top:1px dashed var(--border); margin:20px 0;">
+
+        <div class="form-group">
+          <label>Payment Method</label>
+          <div class="payment-grid">
+            <div class="pay-opt" [class.selected]="checkoutPayment==='CASH'" (click)="checkoutPayment='CASH'">💵 Cash</div>
+            <div class="pay-opt" [class.selected]="checkoutPayment==='CARD'" (click)="checkoutPayment='CARD'">💳 Card</div>
+            <div class="pay-opt" [class.selected]="checkoutPayment==='UPI'" (click)="checkoutPayment='UPI'">📱 UPI/QR</div>
+            <div class="pay-opt" [class.selected]="checkoutPayment==='OTHER'" (click)="checkoutPayment='OTHER'">⚙️ Other</div>
+          </div>
+          @if (checkoutPayment === 'OTHER') {
+            <input type="text" [(ngModel)]="checkoutPaymentOther" placeholder="Specify..." style="width:100%; margin-top:8px;">
+          }
+        </div>
+
+        <div class="form-group">
+          <label>Discount</label>
+          <div style="display:flex; gap:10px;">
+            <select [(ngModel)]="discountType" (change)="recalculateDiscount()" style="width:70px;">
+              <option value="percentage">%</option>
+              <option value="flat">₹</option>
+            </select>
+            <input type="number" [(ngModel)]="discountAmount" (input)="recalculateDiscount()" style="flex:1">
+          </div>
+        </div>
+
+        <div class="total-row" style="border-top:none; padding-top:0;">
+          <span>To Pay</span>
+          <span class="text-primary">{{ getCartTotal() | currency:'INR' }}</span>
+        </div>
+      </div>
+
+     <div class="panel-foot">
+        <button class="btn outline" (click)="saveDraft()">Save Draft</button>
+        
+        @if (orderType === 'Dine-in') {
+          <button class="btn primary"
+                  [disabled]="!checkoutCustomerMobile || mobileError"
+                  (click)="placeOrderAndNotifyKitchen(false)">
+            Update Kitchen
+          </button>
+          <button class="btn success"
+                  [disabled]="!checkoutPayment"
+                  (click)="placeOrderAndNotifyKitchen(true)">
+            Final Payment
+          </button>
+        } @else {
+          <button class="btn success"
+                  [disabled]="!checkoutCustomerMobile || !checkoutPayment"
+                  (click)="placeOrderAndNotifyKitchen(true)">
+            Pay & Print
+          </button>
+        }
+      </div>
+    </div>
+  }
+
+  @if (showTableModal) {
+    <div class="backdrop" (click)="closeTableModal()"></div>
+    <div class="slide-panel left" style="left:50%; top:50%; width:300px; height:auto; transform:translate(-50%, -50%); border-radius:12px;">
+      <div class="panel-head"><h3>{{ editingTable ? 'Edit' : 'Add' }} Table</h3></div>
+      <div class="panel-body">
+        <div class="form-group">
+          <label>Table Number</label>
+          <input type="number" [(ngModel)]="newTable.number" style="width:100%">
+        </div>
+        <div class="form-group">
+          <label>Capacity</label>
+          <input type="number" [(ngModel)]="newTable.capacity" style="width:100%">
+        </div>
+      </div>
+      <div class="panel-foot">
+        <button class="btn ghost" (click)="closeTableModal()">Cancel</button>
+        <button class="btn primary" (click)="saveTable()">Save</button>
+      </div>
+    </div>
+  }
+
+</div>

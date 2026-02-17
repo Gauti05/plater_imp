@@ -1,0 +1,169 @@
+<div class="dashboard-grid">
+  <div class="kpi-row">
+    <div class="card kpi">
+      <div class="kpi-top">
+        <span class="material-icons kpi-icon brand-bg">account_balance_wallet</span>
+        <div>
+          <h4>Total Inventory Value</h4>
+          <div class="kpi-number">₹{{ inventoryValue | number }}</div>
+        </div>
+      </div>
+      <canvas baseChart [data]="kpiSparklines['inventoryValue']" [type]="'line'" [options]="sparklineOptions"></canvas>
+    </div>
+
+    <div class="card kpi">
+      <div class="kpi-top">
+        <span class="material-icons kpi-icon warning-bg">warning</span>
+        <div>
+          <h4>Low Stock Items</h4>
+          <div class="kpi-number">{{ lowStockCount }}</div>
+        </div>
+      </div>
+      <canvas baseChart [data]="kpiSparklines['lowStock']" [type]="'line'" [options]="sparklineOptions"></canvas>
+    </div>
+
+    <div class="card kpi">
+      <div class="kpi-top">
+        <span class="material-icons kpi-icon success-bg">category</span>
+        <div>
+          <h4>Active Raw Materials</h4>
+          <div class="kpi-number">{{ activeRawMaterialsCount }}</div>
+        </div>
+      </div>
+      <canvas baseChart [data]="kpiSparklines['rawMaterials']" [type]="'line'" [options]="sparklineOptions"></canvas>
+    </div>
+
+    <div class="card kpi">
+      <div class="kpi-top">
+        <span class="material-icons kpi-icon accent-bg">fastfood</span>
+        <div>
+          <h4>Active Menu Items</h4>
+          <div class="kpi-number">{{ activeMenuItemsCount }}</div>
+        </div>
+      </div>
+      <canvas baseChart [data]="kpiSparklines['menuItems']" [type]="'line'" [options]="sparklineOptions"></canvas>
+    </div>
+  </div>
+
+  <div class="grid-section large-section">
+    <div class="card table-card large-table">
+      <div class="table-header">
+        <h4>🤖 AI Reorder Suggestions</h4>
+        <button class="btn accent-btn" (click)="generateAiReorder()">Refresh AI</button>
+      </div>
+      <table class="data-table">
+        <thead>
+          <tr><th>Item</th><th>Suggested Qty</th><th>Reason (AI)</th></tr>
+        </thead>
+        <tbody>
+          <!-- @for (s of aiReorderSuggestions; track $index) {
+            <tr>
+              <td>{{ s.name }}</td>
+              <td>{{ s.suggestQty }}</td>
+              <td class="ai-reason">{{ s.reason }}</td>
+            </tr>
+          }
+          @if (aiReorderSuggestions.length === 0) {
+            <tr><td colspan="3" class="muted">No suggestions yet. Click Refresh AI.</td></tr>
+          } -->
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card chart-card wide-chart">
+      <div class="card-header"><h4>Inventory Trend (14d)</h4></div>
+      <canvas baseChart [data]="inventoryLine" [type]="'line'" [options]="chartOptions"></canvas>
+    </div>
+
+    <div class="card chart-card wide-chart">
+      <div class="card-header"><h4>Purchases vs Adjustments (7d)</h4></div>
+      <canvas baseChart [data]="purchaseBar" [type]="'bar'" [options]="chartOptions"></canvas>
+    </div>
+
+    <div class="card table-card full-width-table">
+      <div class="table-header"><h4>🚨 Low Stock Items</h4></div>
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Stock</th>
+            <th>Threshold</th>
+            <th>Vendor</th> <th>Category</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (item of lowStockItems; track item.id) {
+            <tr class="low-stock-row">
+              <td>{{ item.name }}</td>
+              <td>{{ item.stock }}</td>
+              <td>{{ item.lowStockThreshold ?? 10 }}</td>
+              <td>{{ item.supplierName }}</td> <td>{{ item.category }}</td>
+            </tr>
+          }
+          @if (lowStockItems.length === 0) {
+            <tr><td colspan="5" class="muted">All good — no low stock items</td></tr> }
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="grid-section side-section">
+    <div class="card chart-card">
+      <div class="card-header"><h4>Inventory by Category</h4></div>
+      <canvas baseChart [data]="inventoryDoughnut" [type]="'doughnut'" [options]="chartOptions"></canvas>
+    </div>
+
+    <div class="card table-card">
+      <div class="table-header"><h4>📅 Expiry Alerts (7d)</h4></div>
+      <table class="data-table">
+        <thead><tr><th>Item</th><th>Qty</th><th>Expiry</th></tr></thead>
+        <tbody>
+          @for (b of expiryAlerts; track b.id) {
+            <tr>
+              <td>{{ getItemNameByBatch(b.id) }}</td>
+              <td>{{ b.qty }}</td>
+              <td class="warning-text">{{ b.expiryDate | date:'MMM d, y' }}</td>
+            </tr>
+          }
+          @if (expiryAlerts.length === 0) {
+            <tr><td colspan="3" class="muted">No expiries in next 7 days</td></tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card table-card">
+      <div class="table-header"><h4>🚚 Supplier Performance</h4></div>
+      <table class="data-table">
+        <thead><tr><th>Supplier</th><th>Avg Lead</th><th>Fill Rate</th></tr></thead>
+        <tbody>
+          @for (s of supplierPerformance; track $index) {
+            <tr>
+              <td>{{ s.name }}</td>
+              <td>{{ s.avgLead }}</td>
+              <td>{{ s.avgFill }}</td>
+            </tr>
+          }
+          @if (supplierPerformance.length === 0) {
+            <tr><td colspan="3" class="muted">No supplier data</td></tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+  
+  <div class="card table-card bottom-row-table">
+    <div class="table-header"><h4>🗑️ Wastage & Adjustments</h4></div>
+    <table class="data-table">
+      <thead><tr><th>Category</th><th>Cost</th></tr></thead>
+      <tbody>
+        @for (w of wastageStats; track $index) {
+          <tr><td>{{ w.category }}</td><td>₹{{ w.cost }}</td></tr>
+        }
+        @if (wastageStats.length === 0) {
+          <tr><td colspan="2" class="muted">No adjustments recorded</td></tr>
+        }
+      </tbody>
+    </table>
+  </div>
+</div>

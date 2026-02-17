@@ -1,0 +1,100 @@
+<div class="page-container">
+  <div class="form-layout">
+    <!-- Main Form Column -->
+    <div class="main-column">
+      <!-- General Info -->
+      <section class="card">
+        <h3 class="section-title">General Information</h3>
+        <div class="form-grid">
+          <div class="form-group">
+            <label class="form-label">Name</label>
+            <input type="text" [(ngModel)]="modifier.name" name="name" class="form-input" required />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Type</label>
+            <select [(ngModel)]="modifier.type" name="type" class="form-select">
+              <option value="addon">Addon</option>
+              <option value="variation">Variation</option>
+            </select>
+          </div>
+        </div>
+      </section>
+
+      <!-- Options -->
+      <section class="card">
+        <h3 class="section-title">Options</h3>
+        @for (opt of modifier.options; track $index) {
+          <div class="option-row">
+            <input type="text" [(ngModel)]="opt.label" placeholder="Label (e.g., Small, Extra Cheese)" class="form-input" />
+            <input type="number" [(ngModel)]="opt.price" placeholder="Price" class="form-input" />
+            @if (modifier.options.length > 1) {
+              <button type="button" class="btn btn-danger btn-small" (click)="removeOption($index)">✖</button>
+            }
+          </div>
+        }
+        <button type="button" class="btn btn-tertiary btn-small" (click)="addOption()">+ Add Option</button>
+      </section>
+
+      <!-- Menu Associations -->
+      <section class="card">
+        <h3 class="section-title">Associate Menu Items</h3>
+        <input
+          type="text"
+          [(ngModel)]="menuSearchTerm"
+          (input)="filterMenuItems()"
+          placeholder="Search menu items..."
+          class="form-input"
+        />
+       <div class="menu-assoc">
+  @for (menu of filteredMenuItems; track menu.id) {
+    <label class="checkbox">
+      <input
+        type="checkbox"
+        [checked]="modifier.associatedMenuItems.includes(menu.id)"
+       (change)="toggleMenuItem(menu.id, $any($event.target).checked)"
+
+      />
+      {{ menu.name }}
+    </label>
+  }
+</div>
+        @if (!filteredMenuItems.length) {
+          <div class="muted">No menu items found</div>
+        }
+      </section>
+
+      <!-- Save Status -->
+      @if (statusMessage) {
+        <div class="status-banner" [class.success]="statusType==='success'" [class.error]="statusType==='error'">
+          {{ statusMessage }}
+        </div>
+      }
+    </div>
+
+    <!-- Sidebar Column -->
+    <aside class="side-column">
+      <!-- Status -->
+      <div class="card">
+        <h4 class="card-title">Status</h4>
+        <div class="status-indicator">
+          <div class="form-toggle">
+            <label class="switch">
+              <input type="checkbox" [(ngModel)]="modifier.isActive" name="isActive" />
+              <span class="slider"></span>
+            </label>
+            <span class="status-label">{{ modifier.isActive ? 'Active' : 'Inactive' }}</span>
+          </div>
+        </div>
+        <div class="status-notes">
+          This modifier is {{ modifier.isActive ? 'enabled for use in menu items.' : 'disabled and will not appear.' }}
+        </div>
+      </div>
+
+      <!-- Actions -->
+      <div class="card card-actions-block">
+        <button type="submit" class="btn btn-primary btn-block" (click)="saveModifier()">Save</button>
+        <button class="btn btn-secondary btn-block" (click)="router.navigate(['/', storeSlug, 'inventory', 'modifiers'])">Back</button>
+      </div>
+    </aside>
+  </div>
+</div>

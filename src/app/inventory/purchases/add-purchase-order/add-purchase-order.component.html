@@ -1,0 +1,131 @@
+<div class="page-container">
+  <div class="form-layout">
+    <div class="main-column">
+      <section class="card">
+        <h3 class="section-title">Purchase Order Info</h3>
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Supplier</label>
+            <select [(ngModel)]="purchaseOrder.supplierId" (change)="recalculateTotals()" class="form-select">
+              <option value="">Select Supplier</option>
+              @for (s of suppliers; track s.id) {
+                <option [value]="s.id">{{ s.name }}</option>
+              }
+            </select>
+          </div>
+          <div class="form-group">
+            <label>PO Date</label>
+            <input type="date" [(ngModel)]="purchaseOrder.poDate" class="form-input"/>
+          </div>
+          <div class="form-group">
+            <label>Expected Delivery</label>
+            <input type="date" [(ngModel)]="purchaseOrder.expectedDate" class="form-input"/>
+          </div>
+        </div>
+      </section>
+
+      <section class="card">
+        <h3 class="section-title">Line Items</h3>
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Item</th>
+              <th>Ordered</th>
+              <th>Unit</th>
+              <th>Price</th>
+              <th>GST %</th>
+              <th>Total</th>
+              <th>Received</th>
+              <th>Status</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (line of purchaseOrder.items; track line.itemId; let i=$index) {
+              <tr>
+                <td>
+                  <select [(ngModel)]="line.itemId" (change)="recalculateTotals()" class="form-select">
+                    <option value="">Select Item</option>
+                    @for (it of itemsCatalog; track it.id) {
+                      <option [value]="it.id">{{ it.name }}</option>
+                    }
+                  </select>
+                </td>
+                <td>
+                  <input type="number" [(ngModel)]="line.quantity" (input)="recalculateTotals()" class="form-input small"/>
+                </td>
+                <td>{{ line.unit }}</td>
+                <td>
+                  <input type="number" [(ngModel)]="line.price" (input)="recalculateTotals()" class="form-input small"/>
+                </td>
+                <td>
+                  <input type="number" [(ngModel)]="line.gstPercent" (input)="recalculateTotals()" class="form-input small"/>
+                </td>
+                <td>₹{{ line.total }}</td>
+                <td>
+                  <div style="display:flex;gap:4px;align-items:center">
+                    <input type="number"
+                           [max]="line.quantity"
+                           [min]="0"
+                           [(ngModel)]="line.receivedQty"
+                           class="form-input small"/>
+                    @if (needsSave(line)) {
+                      <button class="btn btn-small btn-success" (click)="saveReceived(line)">💾 Save</button>
+                    }
+                  </div>
+                </td>
+              <td>
+  <span class="badge"
+        [class.badge-warning]="line.receivedQty > 0 && line.receivedQty < line.quantity"
+        [class.badge-success]="line.receivedQty === line.quantity"
+        [class.badge-secondary]="line.receivedQty === 0">
+    {{ line.receivedQty === 0 ? 'Pending' : (line.receivedQty < line.quantity ? 'Partial' : 'Received') }}
+  </span>
+</td>
+
+                <td>
+                  <button class="btn btn-small btn-danger" (click)="removeLineItem(i)">✖</button>
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="9" class="muted">No line items. Add a line to begin.</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+        <button class="btn btn-small btn-tertiary" (click)="addLineItem()">+ Add Line</button>
+      </section>
+
+      <section class="card">
+        <h3 class="section-title">Notes</h3>
+        <textarea [(ngModel)]="purchaseOrder.notes" class="form-input"></textarea>
+      </section>
+    </div>
+
+    <aside class="side-column">
+      <div class="card">
+        <h4>Order Summary</h4>
+        <p>Subtotal: ₹{{purchaseOrder.subtotal}}</p>
+        <p>GST: ₹{{purchaseOrder.gstTotal}}</p>
+        <p><strong>Total: ₹{{purchaseOrder.grandTotal}}</strong></p>
+        <p>Status: <strong>{{purchaseOrder.status}}</strong></p>
+      </div>
+      <div class="card card-actions-block">
+        <button class="btn btn-primary btn-block" (click)="savePurchaseOrder(false)">Save Draft</button>
+        <button class="btn btn-success btn-block" (click)="savePurchaseOrder(true)">Finalize</button>
+        <button class="btn btn-danger btn-block" (click)="cancelPurchaseOrder()">Cancel</button>
+        <button class="btn btn-secondary btn-block" (click)="router.navigate(['/', storeSlug, 'inventory', 'purchase-orders'])">Back</button>
+      </div>
+    </aside>
+  </div>
+
+  <div class="toast-container">
+    @for (t of toastMessages; track t.id) {
+      <div class="toast" [ngClass]="t.type">
+        <span>{{t.text}}</span>
+        <button (click)="dismissToast(t.id)">✖</button>
+      </div>
+    }
+  </div>
+</div>

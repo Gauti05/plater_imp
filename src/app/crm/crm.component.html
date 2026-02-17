@@ -1,0 +1,15 @@
+@if (storeId) {
+    <div >
+      <app-dynamic-table
+        [data]="customers"
+        [columns]="tableColumns"
+        [filters]="customerFilters"
+        [pageSize]="10"
+        [hasActions]="false"
+        [rowRouteBase]="'/' + storeId + '/crm/view'"
+        [rowIdField]="'id'"
+        [buttonLabel]="'Add Customer'"
+        [buttonRoute]="'/' + storeId + '/crm/add'"
+      ></app-dynamic-table>
+    </div>
+  }

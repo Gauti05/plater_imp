@@ -1,0 +1,95 @@
+/* --- Main Layout & Containers --- */
+.bulk-mail-container {
+  min-height: 100vh;
+  background-color: #f9fafb;
+  font-family: ui-sans-serif, system-ui, sans-serif;
+  color: #1e293b;
+  
+  box-sizing: border-box;
+}
+
+
+.content-wrapper { margin: 0 auto; }
+
+/* --- Header --- */
+.main-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 2rem; }
+.app-title { font-size: 1.875rem; font-weight: 700; color: #4f46e5; margin: 0; line-height: 1.2; }
+.app-subtitle { color: #64748b; margin-top: 0.25rem; font-size: 1rem; margin-bottom: 0; }
+.status-badge { display: inline-block; padding: 0.25rem 0.75rem; background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 9999px; font-size: 0.75rem; font-weight: 500; color: #64748b; }
+
+/* --- Grid --- */
+.main-grid { display: grid; grid-template-columns: 1fr; gap: 1.5rem; }
+@media (min-width: 1024px) { .main-grid { grid-template-columns: 7fr 5fr; } }
+.left-column, .right-column { display: flex; flex-direction: column; gap: 1.5rem; }
+
+/* --- Card --- */
+.card { background-color: #ffffff; border-radius: 0.75rem; border: 1px solid #e2e8f0; padding: 1.5rem; box-shadow: 0 1px 2px 0 rgba(0,0,0,0.05); }
+.sticky-card { position: sticky; top: 1.5rem; z-index: 10; }
+.card-title { font-size: 1.125rem; font-weight: 700; color: #1e293b; margin: 0 0 1rem 0; }
+
+/* --- Forms --- */
+.card-header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
+.label-text { display: block; font-size: 0.875rem; font-weight: 600; color: #334155; margin-bottom: 0.35rem; }
+.sub-label { font-weight: 400; color: #94a3b8; font-size: 0.75rem; margin-left: 0.25rem; }
+.count-badge { font-size: 0.75rem; background-color: #e0e7ff; color: #4338ca; padding: 0.25rem 0.5rem; border-radius: 0.375rem; font-weight: 500; }
+.form-control { width: 100%; padding: 0.625rem; font-size: 0.875rem; border: 1px solid #cbd5e1; border-radius: 0.5rem; outline: none; transition: all 0.2s; box-sizing: border-box; background-color: #fff; color: #0f172a; }
+.form-control:focus { border-color: #4f46e5; box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1); }
+.form-control:disabled { background-color: #f1f5f9; cursor: not-allowed; color: #94a3b8; }
+.text-area-recipients { height: 10rem; font-family: monospace; resize: none; }
+.text-area-body { height: 16rem; resize: none; font-family: sans-serif; }
+.helper-text { font-size: 0.75rem; color: #94a3b8; margin-top: 0.5rem; margin-bottom: 0; }
+.card-footer-right { display: flex; justify-content: flex-end; margin-top: 0.5rem; }
+.space-y-md > * + * { margin-top: 1rem; }
+
+/* --- Buttons --- */
+.btn-text { background: none; border: none; font-size: 0.75rem; color: #94a3b8; cursor: pointer; padding: 4px; }
+.btn-text:hover { color: #dc2626; }
+.action-buttons { display: flex; flex-direction: column; gap: 0.75rem; }
+.btn-primary { width: 100%; padding: 0.75rem 1rem; background-color: #4f46e5; color: white; font-weight: 600; border-radius: 0.5rem; border: none; cursor: pointer; transition: background-color 0.2s; display: flex; justify-content: center; align-items: center; }
+.btn-primary:hover:not(:disabled) { background-color: #4338ca; }
+.btn-primary:disabled { background-color: #cbd5e1; cursor: not-allowed; }
+.btn-secondary { width: 100%; padding: 0.5rem 1rem; background-color: white; border: 1px solid #fecaca; color: #dc2626; font-weight: 500; border-radius: 0.5rem; cursor: pointer; }
+.btn-secondary:hover { background-color: #fef2f2; }
+.btn-content { display: flex; align-items: center; gap: 0.5rem; }
+.btn-link { background: none; border: none; color: #4f46e5; font-size: 0.75rem; cursor: pointer; text-decoration: underline; }
+
+/* --- Spinner --- */
+.spinner { width: 1.25rem; height: 1.25rem; animation: spin 1s linear infinite; }
+@keyframes spin { 100% { transform: rotate(360deg); } }
+
+/* --- Progress --- */
+.progress-section { margin-bottom: 1.5rem; }
+.progress-labels, .progress-stats { display: flex; justify-content: space-between; font-size: 0.75rem; margin-bottom: 0.5rem; }
+.progress-labels { color: #475569; font-weight: 600; }
+.progress-stats { color: #94a3b8; margin-top: 0.5rem; }
+.progress-track { width: 100%; background-color: #f1f5f9; border-radius: 9999px; height: 0.625rem; overflow: hidden; }
+.progress-fill { background-color: #4f46e5; height: 100%; border-radius: 9999px; transition: width 0.3s ease-out; }
+
+/* --- Notice --- */
+.notice-box { margin-top: 1rem; padding: 0.75rem; background-color: #eff6ff; border: 1px solid #dbeafe; border-radius: 0.5rem; color: #1d4ed8; font-size: 0.75rem; line-height: 1.5; }
+.notice-box p { margin: 0; }
+
+/* --- Log Table --- */
+.log-card { display: flex; flex-direction: column; height: 24rem; padding: 0; overflow: hidden; }
+.log-header { padding: 1rem; border-bottom: 1px solid #f1f5f9; background-color: #f8fafc; display: flex; justify-content: space-between; align-items: center; }
+.log-title { font-weight: 600; color: #334155; font-size: 1rem; margin: 0; }
+.log-body { flex: 1; overflow-y: auto; background-color: #fff; position: relative; }
+.empty-state { height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #94a3b8; text-align: center; padding: 2rem; }
+.log-table { width: 100%; text-align: left; border-collapse: collapse; font-size: 0.875rem; }
+.log-table thead { position: sticky; top: 0; background-color: #f8fafc; color: #64748b; font-size: 0.75rem; text-transform: uppercase; z-index: 5; }
+.log-table th, .log-table td { padding: 0.75rem 1rem; }
+.log-table tr { border-bottom: 1px solid #f1f5f9; }
+.log-table tr:hover { background-color: #f8fafc; }
+.email-col { font-family: monospace; font-size: 0.75rem; color: #475569; max-width: 150px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.text-right { text-align: right; }
+.time-col { color: #94a3b8; font-size: 0.75rem; }
+.status-pill { display: inline-block; padding: 0.125rem 0.5rem; border-radius: 9999px; font-size: 0.625rem; font-weight: 700; text-transform: uppercase; }
+.status-pill.pending { background-color: #fef9c3; color: #a16207; }
+.status-pill.sent { background-color: #dcfce7; color: #15803d; }
+.status-pill.failed { background-color: #fee2e2; color: #b91c1c; }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #94a3b8; }

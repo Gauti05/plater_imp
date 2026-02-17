@@ -1,0 +1,528 @@
+:root {
+  --primary: #2563eb;
+  --primary-hover: #1d4ed8;
+  --accent: #3b82f6;
+  --bg-main: #f9fafb;
+  --bg-surface: #ffffff;
+  --bg-hover: #f3f4f6;
+  --text-main: #111827;
+  --text-muted: #6b7280;
+  --border: #e5e7eb;
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  --sidebar-width: 200px;
+  --sidebar-collapsed-width: 72px;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --transition: 0.25s ease-in-out;
+}
+
+/* RESET */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  height: 100%;
+  font-family: 'Inter', sans-serif;
+  background: var(--bg-main);
+  color: var(--text-main);
+  overflow: hidden;
+}
+
+/* ===================== LAYOUT ===================== */
+.biz-layout {
+  display: flex;
+  height: 100vh;
+  width: 100%;
+  overflow: hidden;
+  position: relative;
+}
+
+/* ===================== SIDEBAR ===================== */
+.biz-sidebar {
+  width: var(--sidebar-width);
+  flex-shrink: 0;
+  background: var(--bg-surface);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  padding: 20px 16px;
+  transition: width var(--transition), transform var(--transition);
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 100vh;
+  z-index: 500; /* Increased to ensure it floats above everything */
+}
+
+.sidebar-collapsed .biz-sidebar {
+  width: var(--sidebar-collapsed-width);
+}
+
+/* Backdrop for Mobile Overlay */
+.biz-sidebar-backdrop {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(2px);
+  z-index: 400;
+  opacity: 0;
+  transition: opacity var(--transition);
+}
+
+/* Brand */
+.biz-brand {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.biz-brand-logo {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-md);
+  object-fit: cover;
+}
+
+/* ===================== NAVIGATION ===================== */
+.biz-nav {
+  display: flex;
+  flex-direction: column;
+  margin-top: 20px;
+  gap: 4px;
+}
+
+.biz-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
+  text-decoration: none;
+  color: var(--text-muted);
+  font-size: 14px;
+  font-weight: 500;
+  position: relative;
+  transition: all var(--transition);
+}
+
+.biz-nav-item:hover {
+  background: var(--bg-hover);
+  color: var(--primary);
+}
+
+.biz-nav-item.active {
+  background: rgba(37, 99, 235, 0.08);
+  color: var(--primary);
+  font-weight: 600;
+}
+
+.biz-nav-item.active::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 8px;
+  bottom: 8px;
+  width: 3px;
+  border-radius: 2px;
+  background: var(--primary);
+}
+
+.biz-nav-item .icon {
+  width: 20px;
+  height: 20px;
+  fill: currentColor;
+}
+
+/* ===================== SETTINGS GROUP ===================== */
+.biz-nav-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 10px;
+}
+
+.group-header {
+  justify-content: space-between;
+}
+
+.dropdown-icon {
+  width: 16px;
+  height: 16px;
+  fill: currentColor;
+  transition: transform var(--transition);
+}
+
+.dropdown-icon.open {
+  transform: rotate(180deg);
+}
+
+/* Submenu wrapper */
+.biz-submenu {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-left: 2px solid var(--border);
+  margin-left: 30px;
+  padding-left: 10px;
+  gap: 2px;
+  animation: fadeIn 0.2s ease;
+}
+
+.biz-nav-item.sub-item {
+  font-size: 13px;
+  padding: 8px 12px;
+  color: var(--text-muted);
+}
+
+.biz-nav-item.sub-item:hover {
+  background: var(--bg-hover);
+  color: var(--primary);
+}
+
+.biz-nav-item.sub-item.active {
+  color: var(--primary);
+  background: rgba(37, 99, 235, 0.08);
+  border-radius: var(--radius-sm);
+}
+
+/* ===================== SIDEBAR FOOTER ===================== */
+.biz-sidebar-footer {
+  margin-top: auto;
+  border-top: 1px solid var(--border);
+  padding-top: 16px;
+  margin-bottom: -20px;
+}
+
+.biz-btn-ghost-full {
+  width: 100%;
+  background: transparent;
+  color: var(--text-muted);
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all var(--transition);
+}
+
+.biz-btn-ghost-full:hover {
+  background: var(--bg-hover);
+  color: var(--primary);
+}
+
+/* ===================== MAIN AREA ===================== */
+.biz-main {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  margin-left: var(--sidebar-width);
+  height: 100vh;
+  transition: margin-left var(--transition);
+  overflow: hidden;
+  background: var(--bg-main);
+  width: 100%;
+}
+
+.sidebar-collapsed .biz-main {
+  margin-left: var(--sidebar-collapsed-width);
+}
+
+/* ===================== TOPBAR ===================== */
+.biz-topbar {
+  flex-shrink: 0;
+  position: fixed;
+  top: 0;
+  left: var(--sidebar-width);
+  right: 0;
+  height: 64px;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px;
+  box-shadow: var(--shadow-sm);
+  z-index: 100;
+  transition: left var(--transition);
+}
+
+.sidebar-collapsed .biz-topbar {
+  left: var(--sidebar-collapsed-width);
+}
+
+.biz-top-title {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.spacer {
+  flex: 1;
+}
+
+/* ===================== SIDEBAR TOGGLE ===================== */
+.biz-icon-btn {
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  transition: all 0.25s;
+}
+
+.biz-icon-btn svg {
+  width: 22px;
+  height: 22px;
+  stroke: currentColor;
+  fill: none;
+}
+
+.biz-icon-btn:hover {
+  background: var(--bg-hover);
+  color: var(--primary);
+  transform: scale(1.05);
+}
+
+/* ===================== PROFILE SECTION ===================== */
+.biz-user-profile-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.biz-user-profile {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  padding: 4px 6px;
+  border-radius: 20px;
+  transition: all 0.25s;
+}
+
+.biz-user-profile:hover {
+  background: var(--bg-hover);
+}
+
+.biz-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--primary), var(--accent));
+  color: #fff;
+  display: grid;
+  place-items: center;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.biz-user-profile::after {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-right: 1.8px solid var(--text-muted);
+  border-bottom: 1.8px solid var(--text-muted);
+  transform: rotate(45deg);
+  margin-left: 4px;
+  transition: transform 0.25s, border-color 0.25s;
+}
+
+.biz-user-profile.active::after {
+  transform: rotate(-135deg);
+  border-color: var(--primary);
+}
+
+/* ===================== PROFILE DROPDOWN ===================== */
+.biz-user-menu {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  background: var(--bg-surface);
+  border-radius: 12px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+  width: 260px;
+  border: 1px solid var(--border);
+  overflow: hidden;
+  z-index: 200;
+}
+
+.biz-user-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  background: var(--bg-hover);
+}
+
+.biz-user-avatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: var(--primary);
+  color: #fff;
+  display: grid;
+  place-items: center;
+  font-weight: 600;
+}
+
+.biz-user-email {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-main);
+  word-break: break-all;
+}
+
+.biz-user-status {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.biz-menu-divider {
+  height: 1px;
+  background: var(--border);
+}
+
+.biz-menu-item {
+  padding: 10px 16px;
+  font-size: 14px;
+  color: var(--text-main);
+  border: none;
+  background: transparent;
+  text-align: left;
+  width: 100%;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+
+.biz-menu-item:hover {
+  background: var(--bg-hover);
+  color: var(--primary);
+}
+
+/* ===================== CONTENT AREA ===================== */
+.biz-content {
+  flex: 1;
+  margin-top: 64px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  background: var(--bg-main);
+  scroll-behavior: smooth;
+  width: 100%;
+}
+
+/* ===================== COLLAPSED SIDEBAR FIX ===================== */
+.sidebar-collapsed .biz-sidebar {
+  padding: 20px 8px;
+}
+
+.sidebar-collapsed .biz-nav-item {
+  justify-content: center;
+  padding: 10px 0;
+  gap: 0;
+  position: relative;
+}
+
+.sidebar-collapsed .biz-nav-item .icon {
+  width: 22px;
+  height: 22px;
+}
+
+.sidebar-collapsed .biz-nav-item span {
+  display: none !important;
+}
+
+/* Tooltip for collapsed sidebar */
+.sidebar-collapsed .biz-nav-item::after {
+  content: attr(data-label);
+  position: absolute;
+  left: 70px;
+  background: var(--bg-surface);
+  color: var(--text-main);
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 13px;
+  white-space: nowrap;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-50%);
+  top: 50%;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.sidebar-collapsed .biz-nav-item:hover::after {
+  opacity: 1;
+  transform: translateY(-50%) translateX(4px);
+}
+
+/* Collapse hide submenu */
+.sidebar-collapsed .biz-submenu {
+  display: none;
+}
+
+/* ===================== ANIMATIONS ===================== */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* =========================================================
+   ================ MOBILE RESPONSIVENESS ==================
+   ========================================================= */
+
+@media (max-width: 960px) {
+  
+  /* 1. Reset Main Area Widths so Dashboard fits perfectly */
+  .biz-main {
+    margin-left: 0 !important;
+    width: 100vw;
+  }
+
+  .biz-topbar {
+    left: 0 !important;
+    width: 100vw;
+  }
+
+  /* 2. Turn Sidebar into a Mobile Overlay Drawer */
+  .biz-sidebar {
+    transform: translateX(-100%);
+    width: 260px !important; /* Force a good mobile width */
+    box-shadow: var(--shadow-lg);
+  }
+
+  /* 3. When Sidebar is OPEN on Mobile */
+  .biz-layout.sidebar-open .biz-sidebar {
+    transform: translateX(0);
+  }
+
+  .biz-layout.sidebar-open .biz-sidebar-backdrop {
+    display: block;
+    opacity: 1;
+  }
+  
+  /* Prevent scrolling on the body when the menu is open */
+  .biz-layout.sidebar-open {
+    overflow: hidden;
+  }
+}

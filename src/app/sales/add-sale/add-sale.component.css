@@ -1,0 +1,118 @@
+:root{
+  --primary:#4a67ff;
+  --primary-600:#3a52e0;
+  --primary-50:#eef2ff;
+
+  --bg:#f6f7f8;
+  --card:#ffffff;
+  --card-border:#e6e7eb;
+
+  --text:#1f2937;
+  --muted:#6b7280;
+
+  --success:#10b981;
+  --danger:#ef4444;
+  --ring: rgba(74,103,255,.18);
+  --shadow: 0 1px 2px rgba(16,24,40,.06), 0 1px 3px rgba(16,24,40,.10);
+  --shadow-lg: 0 10px 30px rgba(16,24,40,.08);
+}
+
+*{box-sizing:border-box}
+body{background:var(--bg);font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:var(--text);}
+
+.add-sales-wrap{padding:24px;max-width:1200px;margin:0 auto;}
+.sales-form{display:flex;flex-direction:column;gap:20px}
+
+.page-head{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin-bottom:4px}
+.form-title{font-size:22px;line-height:1.25;font-weight:700;margin:0}
+.form-description{margin:6px 0 0;color:var(--muted);font-size:13.5px}
+
+.quick-summary{display:flex;gap:14px;align-items:stretch;flex-wrap:wrap}
+.qs-item{min-width:150px;background:var(--card);border:1px solid var(--card-border);border-radius:10px;padding:10px 12px;box-shadow:var(--shadow)}
+.qs-label{font-size:12px;color:var(--muted);margin-bottom:4px}
+.qs-value{font-weight:700;font-size:16px}
+
+/* Layout */
+.form-container{display:grid;grid-template-columns: minmax(0,2fr) minmax(260px,1fr);gap:20px;align-items:start}
+.main-form-content{display:flex;flex-direction:column;gap:16px}
+.form-sidebar{display:flex;flex-direction:column}
+
+.shopify-card{background:var(--card);border:1px solid var(--card-border);border-radius:12px;padding:18px 18px 16px;box-shadow:var(--shadow)}
+.card-header{border-bottom:1px solid var(--card-border);margin:-2px -2px 14px;padding:0 2px 12px}
+.card-title{font-weight:600;font-size:15px}
+.card-subtitle{margin-top:4px;font-size:12.5px;color:var(--muted)}
+
+.form-grid{display:grid;grid-template-columns:repeat(12,1fr);gap:14px}
+.form-grid>.form-field{grid-column: span 6}
+.form-field{display:flex;flex-direction:column;gap:6px}
+.form-field label{font-size:13px;font-weight:600}
+
+.help-text{color:var(--muted);font-size:12px}
+.count-row{display:flex;justify-content:flex-end;margin-top:4px}
+
+.input-field{
+  appearance:none;
+  width:100%;
+  padding:10px 12px;
+  border:1px solid var(--card-border);
+  border-radius:8px;
+  background:#f9fafb;
+  color:var(--text);
+  font-size:14px;
+  transition:border-color .15s ease, box-shadow .15s ease, background .15s ease;
+}
+.input-field:focus{
+  outline:none;border-color:var(--primary);
+  box-shadow:0 0 0 4px var(--ring);
+  background:#fff;
+}
+.input-field::placeholder{color:#9aa3af}
+.input-field.is-invalid{border-color:var(--danger)}
+.textarea{resize:vertical;min-height:120px}
+
+.input-group{position:relative;display:flex;align-items:stretch}
+.input-addon{
+  display:inline-flex;align-items:center;padding:0 10px;border:1px solid var(--card-border);
+  border-right:none;border-radius:8px 0 0 8px;background:#fff;color:var(--muted);font-size:13px
+}
+.input-group .input-field{border-radius:0 8px 8px 0}
+
+.error-message{color:var(--danger);font-size:12.5px;margin-top:-2px}
+
+/* Sidebar */
+.sticky-card{position:sticky;top:84px}
+
+/* Derived stats */
+.derived{margin-top:8px;border-top:1px dashed var(--card-border);padding-top:10px;display:grid;gap:8px}
+.derived-row{display:flex;justify-content:space-between;font-size:13.5px}
+.derived-row span{color:var(--muted)}
+
+/* Sticky bottom actions */
+.sticky-actions{position:sticky;bottom:0;z-index:5;border-top:1px solid var(--card-border);background:linear-gradient(to top, rgba(246,247,248,.95), rgba(246,247,248,.75));backdrop-filter:saturate(1.2) blur(6px)}
+.sticky-inner{max-width:1200px;margin:0 auto;padding:12px 24px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.hint .hint-badge{display:inline-block;background:rgba(239,68,68,.1);color:#b91c1c;border:1px solid rgba(239,68,68,.25);font-size:12.5px;padding:6px 10px;border-radius:999px}
+.hint .hint-muted{color:var(--muted);font-size:12.5px}
+
+/* Button */
+.submit-btn{
+  padding:11px 18px;background:var(--primary);color:#fff;border:none;border-radius:10px;
+  font-weight:700;font-size:14px;cursor:pointer;transition:transform .12s ease, box-shadow .12s ease, background .12s ease;
+  box-shadow:0 8px 20px rgba(74,103,255,.18);display:inline-flex;align-items:center;gap:8px
+}
+.submit-btn:hover{background:var(--primary-600);transform:translateY(-1px);box-shadow:0 12px 24px rgba(74,103,255,.22)}
+.submit-btn:disabled{background:#e5e7eb;color:#9ca3af;cursor:not-allowed;box-shadow:none;transform:none}
+.btn-loader{border:3px solid rgba(255,255,255,.45);border-top:3px solid #fff;border-radius:50%;width:18px;height:18px;animation:spin .6s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* Responsive */
+@media (max-width: 992px){
+  .form-container{grid-template-columns:1fr}
+  .sticky-card{top:72px}
+}
+@media (max-width: 640px){
+  .add-sales-wrap{padding:14px}
+  .form-title{font-size:18px}
+  .form-grid{grid-template-columns:1fr}
+  .quick-summary{gap:10px}
+  .qs-item{min-width:unset;flex:1}
+}

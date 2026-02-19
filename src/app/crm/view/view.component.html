@@ -2,10 +2,10 @@
   <div class="crm-content">
     <header class="header1">
       <div class="id-block">
-        <div class="avatar">{{ getInitials((customer?.firstName || '') + ' ' + (customer?.lastName || '')) }}</div>
+        <div class="avatar">{{ getInitials((customer?.name || customer?.firstName || '') + ' ' + (customer?.lastName || '')) }}</div>
         <div class="id-meta">
           <div class="title-row">
-            <h3 class="title">{{ customer?.firstName }} {{ customer?.lastName }}</h3>
+            <h3 class="title">{{ customer?.name || customer?.firstName }} {{ customer?.lastName }}</h3>
             <span class="chip" [ngClass]="leadChipClass(leadScore)">
               <i class="bi bi-stars me-1"></i> Lead: {{ leadScore }}
             </span>
@@ -14,36 +14,35 @@
           <div class="sub">
             <span><i class="bi bi-envelope me-1"></i>{{ customer?.email || '—' }}</span>
             <span class="dot">•</span>
-            <span><i class="bi bi-telephone me-1"></i>{{ customer?.phone || '—' }}</span>
-            <span class="dot">•</span>
-            <span><i class="bi bi-geo-alt me-1"></i>{{ customer?.address || '—' }}, {{ customer?.city || '—' }} ({{ customer?.pin || '—' }})</span>
+            <span><i class="bi bi-telephone me-1"></i>{{ customer?.mobile || customer?.phone || '—' }}</span>
           </div>
 
           <div class="pill-row">
             @if ((clv || 0) > 20000) { <span class="pill vip">💎 VIP</span> }
             @if (orders.length >= 4) { <span class="pill frequent">🔁 Frequent</span> }
             @if (isDormant()) { <span class="pill dormant">🛑 Dormant</span> }
+            <span class="pill" [ngClass]="{'vip': customer?.tier === 'Gold', 'frequent': customer?.tier === 'Silver'}">
+              {{ customer?.tier || 'Standard' }} Member
+            </span>
           </div>
 
-          <div class="assignee-row">
-            <span class="label">Owner:</span>
+          <div class="assignee-row mt-3">
+            <span class="label text-muted">Owner:</span>
             @if (assignedToUserId) {
-              <span class="assignee-pill">
+              <span class="assignee-pill ms-2">
                 <i class="bi bi-person-check me-1"></i>{{ assignedToName || 'Unknown' }}
               </span>
               <button class="btn tiny ghost ms-2" (click)="openAssignModal()">Change</button>
-              <button class="btn tiny danger ghost ms-1" (click)="unassignLead()">Unassign</button>
             } @else {
-              <button class="btn tiny primary" (click)="openAssignModal()">+ Assign Owner</button>
+              <button class="btn tiny primary ms-2" (click)="openAssignModal()">+ Assign Owner</button>
             }
-            <small class="muted ms-2" *ngIf="assignedAt">since {{ assignedAt | date:'dd MMM yyyy, h:mm a' }}</small>
           </div>
         </div>
       </div>
 
       <div class="metrics">
-        <div class="metric"><span>CLV</span><strong>₹{{ clv | number }}</strong></div>
-        <div class="metric"><span>AOV</span><strong>₹{{ aov | number }}</strong></div>
+        <div class="metric"><span>Lifetime Spend</span><strong>₹{{ clv | number }}</strong></div>
+        <div class="metric"><span>Total Points</span><strong>{{ customer?.loyaltyPoints || 0 }}</strong></div>
         <div class="metric"><span>Orders</span><strong>{{ orders.length }}</strong></div>
         <div class="metric"><span>Last Purchase</span><strong>{{ lastPurchaseDate || 'N/A' }}</strong></div>
         <div class="metric">
@@ -58,23 +57,20 @@
       <section class="col">
         <div class="card">
           <div class="card-head">
-            <h5>Pipeline</h5>
+            <h5>Pipeline Status</h5>
             <div class="row-actions">
-              <button class="btn ghost" data-bs-toggle="modal" data-bs-target="#reminderModal">+ Reminder</button>
-              <button style="margin-left: 5px !important;" class="btn ghost" (click)="addNoteFromQuick()">+ Note</button>
+              <button class="btn ghost" (click)="addNoteFromQuick()">+ Note</button>
             </div>
           </div>
-
-          <div class="pipeline">
+          <div class="pipeline mt-3">
             <div class="stage" [class.active]="pipelineStage==='new'">New</div>
             <div class="stage" [class.active]="pipelineStage==='contacted'">Contacted</div>
             <div class="stage" [class.active]="pipelineStage==='qualified'">Qualified</div>
             <div class="stage" [class.active]="pipelineStage==='won'">Won</div>
             <div class="stage" [class.active]="pipelineStage==='lost'">Lost</div>
           </div>
-
-          <div class="inline-controls">
-            <label>Stage</label>
+          <div class="inline-controls mt-4">
+            <label class="text-muted small fw-bold mb-2 d-block">Update Stage</label>
             <select [(ngModel)]="pipelineStage" (change)="savePipelineStage()">
               <option value="new">New</option>
               <option value="contacted">Contacted</option>
@@ -87,20 +83,59 @@
 
         <div class="card">
           <div class="card-head">
+            <h5><i class="bi bi-wallet2 me-2"></i>Points Wallet History</h5>
+          </div>
+          <div class="table-responsive">
+            <table class="table wallet-table m-0">
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Type</th>
+                  <th>Reason</th>
+                  <th class="text-end">Points</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (tx of walletTransactions; track tx.id) {
+                  <tr>
+                    <td>{{ formatDate(tx.createdAt) }}</td>
+                    <td>
+                      <span [class]="tx.type === 'EARN' ? 'text-success' : 'text-danger'" style="font-weight: 600;">
+                        {{ tx.type }}
+                      </span>
+                    </td>
+                    <td style="font-size: 13px; color: var(--muted);">{{ tx.reason || 'Order' }}</td>
+                    <td class="text-end" [class.text-success]="tx.type === 'EARN'" [class.text-danger]="tx.type === 'REDEEM'" style="font-weight: 700;">
+                      {{ tx.type === 'EARN' ? '+' : '-' }}{{ tx.points }}
+                    </td>
+                  </tr>
+                }
+                @if (walletTransactions.length === 0) {
+                  <tr>
+                    <td colspan="4" class="text-center py-4 text-muted">No point history available</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head">
             <h5>Reminders</h5>
-            <div class="toggle">
-              <label>List</label>
-              <input type="checkbox" [(ngModel)]="showCalendarView" />
-              <label>Calendar</label>
+            <div class="toggle d-flex align-items-center gap-2">
+              <label class="small text-muted">List</label>
+              <div class="form-check form-switch m-0">
+                <input type="checkbox" [(ngModel)]="showCalendarView" class="form-check-input" />
+              </div>
+              <label class="small text-muted">Calendar</label>
             </div>
           </div>
-
           @if (showCalendarView) {
-            <div id="calendar" class="calendar"></div>
+            <div id="calendar" class="calendar mt-3"></div>
           } @else {
-            <div class="list">
-              <button class="btn ghost" data-bs-toggle="modal" data-bs-target="#reminderModal">+ Add</button>
-
+            <div class="list mt-3">
+              <button class="btn ghost w-100 mb-3" data-bs-toggle="modal" data-bs-target="#reminderModal">+ Add New Reminder</button>
               @for (reminder of reminders; track reminder.id) {
                 <div class="item">
                   <div class="left">
@@ -110,54 +145,14 @@
                       <small class="muted">Type: {{ reminder.type || 'general' }} • Due: {{ formatDate(reminder.dueDate) }}</small>
                     </div>
                   </div>
-                  <div class="right">
+                  <div class="right d-flex gap-2">
                     <button class="btn tiny" (click)="snoozeReminder(reminder.id, 7)">⏳ 7d</button>
                     <button class="btn tiny ghost" (click)="openReminder(reminder)">Edit</button>
                   </div>
                 </div>
               }
-
               @if (reminders.length === 0) {
-                <p class="muted small">No reminders yet.</p>
-              }
-            </div>
-          }
-        </div>
-
-        <div class="card">
-          <div class="card-head">
-            <h5>Notes</h5>
-            <button class="btn ghost" data-bs-toggle="modal" data-bs-target="#noteModal">+ Add</button>
-          </div>
-
-          <ul class="timeline">
-            @for (note of notes; track note.id) {
-              <li class="tl-item">
-                <span class="avatar mini">✍️</span>
-                <div class="bubble">
-                  <div class="line">{{ note.text }}</div>
-                  <small class="muted">{{ formatDate(note.createdAt) }} • <span class="tag light">{{ note.type || 'General' }}</span></small>
-                </div>
-              </li>
-            }
-          </ul>
-
-          @if (notes.length === 0) {
-            <p class="muted small">No notes yet.</p>
-          }
-        </div>
-
-        <div class="card">
-          <div class="card-head">
-            <h5>Tags</h5> <button class="btn ghost" data-bs-toggle="modal" data-bs-target="#manualTagModal">+ Add Manual Tag</button>
-          </div>
-          
-          @if (autoTags.length === 0) {
-            <p class="muted small">No tags</p>
-          } @else {
-            <div class="tags">
-              @for (tag of autoTags; track tag) { 
-                <span class="tag">{{ tag }}</span> 
+                <p class="muted small text-center mt-3">No reminders yet.</p>
               }
             </div>
           }
@@ -169,29 +164,22 @@
           <div class="card">
             <div class="card-head"><h5>Lead Score</h5></div>
             <div class="gauge">
-              <canvas
-                baseChart
-                [type]="'doughnut'"
-                [data]="leadGaugeData"
-                [options]="leadGaugeOptions"
-                height="220">
-              </canvas>
+              <canvas baseChart [type]="'doughnut'" [data]="leadGaugeData" [options]="leadGaugeOptions" height="220"></canvas>
               <div class="gauge-center">
                 <div class="big">{{ leadScore }}</div>
-                <div class="muted tiny">out of 100</div>
+                <div class="muted tiny text-uppercase tracking-wide">Score</div>
               </div>
             </div>
-            <p class="muted tiny mt-2">Stage, recency, engagement & value blended.</p>
           </div>
 
           <div class="card">
             <div class="card-head"><h5>Payment Breakdown</h5></div>
             <div class="mini-metrics">
-              <div class="metric"><span>Received</span><strong>₹{{ paymentReceived | number }}</strong></div>
-              <div class="metric"><span>Pending</span><strong>₹{{ paymentPending | number }}</strong></div>
+              <div class="metric flex-fill text-center p-3"><span>Received</span><strong>₹{{ paymentReceived | number }}</strong></div>
+              <div class="metric flex-fill text-center p-3"><span>Pending</span><strong>₹{{ paymentPending | number }}</strong></div>
             </div>
-            <div class="chart-wrap">
-              <canvas baseChart [type]="'doughnut'" [data]="paymentDoughnutData" [options]="doughnutOptions" height="220"></canvas>
+            <div class="chart-wrap mt-4">
+              <canvas baseChart [type]="'doughnut'" [data]="paymentDoughnutData" [options]="doughnutOptions" height="200"></canvas>
             </div>
           </div>
         </div>
@@ -199,14 +187,14 @@
         <div class="card">
           <div class="card-head">
             <h5>Revenue Over Time</h5>
-            <button class="btn tiny" (click)="toggleChartType()">
+            <button class="btn tiny ghost" (click)="toggleChartType()">
               Switch to {{ chartType === 'line' ? 'Bar' : 'Line' }}
             </button>
           </div>
           @if (chartLoading) {
-            <div class="center pad"><div class="spinner-border text-primary" role="status"></div></div>
+            <div class="text-center p-4"><div class="spinner-border text-primary"></div></div>
           } @else {
-            <div class="chart-wrap">
+            <div class="chart-wrap mt-3">
               <canvas baseChart [data]="revenueChartData" [options]="revenueChartOptions" [type]="chartType" height="260"></canvas>
             </div>
           }
@@ -214,14 +202,8 @@
 
         <div class="card">
           <div class="card-head"><h5>Forecast Probability</h5></div>
-          <div class="chart-wrap">
-            <canvas
-              baseChart
-              [type]="'bar'"
-              [data]="forecastBarData"
-              [options]="forecastBarOptions"
-              height="220">
-            </canvas>
+          <div class="chart-wrap mt-3">
+            <canvas baseChart [type]="'bar'" [data]="forecastBarData" [options]="forecastBarOptions" height="220"></canvas>
           </div>
         </div>
       </section>
@@ -237,14 +219,11 @@
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
       <div class="modal-body">
-        <label class="form-label">Note</label>
         <textarea [(ngModel)]="newNote" class="form-control" rows="4" placeholder="Type your note..."></textarea>
       </div>
       <div class="modal-footer">
-        <button class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Cancel</button>
-        <button class="btn btn-sm btn-primary" (click)="addNote()" data-bs-dismiss="modal" [disabled]="!newNote.trim().length">
-          Save Note
-        </button>
+        <button class="btn ghost" data-bs-dismiss="modal">Cancel</button>
+        <button class="btn primary" (click)="addNote()" data-bs-dismiss="modal">Save Note</button>
       </div>
     </div>
   </div>

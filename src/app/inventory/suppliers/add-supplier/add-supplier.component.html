@@ -78,10 +78,15 @@
       </div>
 
       <div class="card card-actions-block">
+        <div class="form-group" style="margin-bottom: 16px; display: flex; align-items: center; gap: 8px; flex-direction: row;">
+          <input type="checkbox" id="publishAll" [(ngModel)]="publishToAll" name="publishToAll" style="width: 16px; height: 16px; cursor: pointer;">
+          <label for="publishAll" style="font-size: 14px; font-weight: 500; color: #374151; cursor: pointer; margin: 0;">Publish to all outlets</label>
+        </div>
+        
         <button class="btn btn-primary btn-block" (click)="saveSupplier()">
           Save
         </button>
-        <button class="btn btn-secondary btn-block" (click)="router.navigate(['/', storeSlug, 'inventory', 'suppliers'])">
+        <button class="btn btn-secondary btn-block" style="margin-top: 10px;" (click)="router.navigate(['/', storeSlug, 'inventory', 'suppliers'])">
           Back
         </button>
       </div>

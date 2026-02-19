@@ -623,3 +623,56 @@ input:focus, select:focus { border-color: var(--primary); background: var(--bg-s
 .diet-icon.veg::after { background-color: #16a34a; }
 .diet-icon.non-veg { border-color: #dc2626; }
 .diet-icon.non-veg::after { background-color: #dc2626; }
+
+/* ⭐ LOYALTY UI STYLES */
+.loyalty-mini-card {
+  background: var(--primary-light);
+  border: 1px solid var(--primary);
+  border-radius: 12px;
+  padding: 14px;
+  margin-bottom: 16px;
+}
+.l-badge {
+  display: inline-block;
+  background: var(--primary);
+  color: white;
+  font-size: 10px;
+  font-weight: 800;
+  padding: 2px 8px;
+  border-radius: 20px;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.l-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+}
+.earn-banner {
+  background: #fdf2f2;
+  color: #991b1b;
+  padding: 10px;
+  border-radius: 8px;
+  text-align: center;
+  font-size: 12px;
+  margin-top: 12px;
+  border: 1px solid #fecaca;
+}
+body.dark-mode .earn-banner {
+  background: rgba(153, 27, 27, 0.2);
+  color: #f87171;
+  border-color: #991b1b;
+}
+.cart-summary-final .summary-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  font-size: 14px;
+}
+.total-row.large {
+  font-size: 24px;
+  border-top: 2px dashed var(--border);
+  margin-top: 12px;
+  padding-top: 12px;
+  font-weight: 800;
+}

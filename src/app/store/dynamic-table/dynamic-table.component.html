@@ -2,158 +2,66 @@
   <div class="table-tools">
     <div class="tools-left">
       <div class="search-wrapper">
-        <svg viewBox="0 0 24 24" class="search-icon"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zM9.5 14C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
         <input type="text" class="search-box" placeholder="Search records..." [(ngModel)]="searchText" (input)="onQueryChange()" />
       </div>
 
-      @if (filters.length > 0) {
-        <div class="dropdown">
-          <button class="btn btn-secondary" type="button" data-bs-toggle="dropdown" data-bs-auto-close="outside">
-            <svg viewBox="0 0 24 24" class="icon"><path d="M10 18h4v-2h-4v2zM3 6v2h18V6H3zm3 7h12v-2H6v2z"/></svg> Filter
-          </button>
-          <div class="dropdown-menu shadow-sm filter-dropdown">
-            <div class="filter-grid">
-              @for (filter of filters; track $index) {
-                <div class="filter-group">
-                  <label class="filter-label">{{ filter.label }}</label>
-                  @if (filter.type === 'text') {
-                    <input class="filter-input" [(ngModel)]="columnFilters[filter.field]" (input)="onQueryChange()" />
-                  } @else if (filter.type === 'select') {
-                    <select class="filter-select" [(ngModel)]="columnFilters[filter.field]" (change)="onQueryChange()">
-                      <option value="">All</option>
-                      @for (opt of filter.options; track $index) { <option [value]="opt">{{ opt }}</option> }
-                    </select>
-                  } @else if (filter.type === 'dateRange') {
-                    <input type="date" class="filter-input mb-1" [(ngModel)]="fromDate" />
-                    <input type="date" class="filter-input" [(ngModel)]="toDate" />
-                    <button class="btn btn-primary mt-2 w-100" (click)="applyDateFilter()">Apply</button>
-                  } @else if (filter.type === 'multiselect') {
-                    <div class="tag-multiselect">
-                      @for (opt of filter.options; track $index) {
-                        <div class="form-check">
-                          <input type="checkbox" class="form-check-input" [id]="filter.field + '_' + opt" [value]="opt" [checked]="columnFilters[filter.field]?.includes(opt)" (change)="onTagToggle(filter.field, opt, getCheckedValue($event))" />
-                          <label class="form-check-label" [for]="filter.field + '_' + opt">{{ opt }}</label>
-                        </div>
-                      }
-                    </div>
-                  }
-                </div>
-              }
-            </div>
-            <div class="d-flex gap-2 mt-3">
-              <button class="btn btn-primary flex-fill" (click)="onQueryChange()">Apply Filters</button>
-              <button class="btn btn-outline-secondary flex-fill" (click)="resetFilters()">Reset</button>
-            </div>
-          </div>
-        </div>
-      }
-
-      @if (allColumns.length > 0) {
-        <div class="dropdown">
-          <button class="btn btn-secondary" type="button" data-bs-toggle="dropdown" data-bs-auto-close="outside">
-            <svg viewBox="0 0 24 24" class="icon"><path d="M19 14h-2v2h2v-2zm-2-4h2v2h-2v-2zm-2 4h2v2h-2v-2zM5 14h2v2H5v-2zm-2 4h2v2H3v-2zm-2-4h2v2H1v-2zm-2-4h2v2H-1v-2zM19 6h-2v2h2V6zM5 6h2v2H5V6zm-2 4h2v2H3v-2zm-2 4h2v2H1v-2zM1 6h2v2H1V6zM15 6h2v2h-2V6zM9 6h2v2H9V6zm-2 4h2v2H7v-2zm-2 4h2v2H5v-2zM9 14h2v2H9v-2zm-2-4h2v2H7v-2zm2-4h2v2H9V6zM15 10h2v2h-2v-2zM11 10h2v2h-2v-2zM15 14h2v2h-2v-2zM11 14h2v2h-2v-2z"/></svg> Columns
-          </button>
-          <div class="dropdown-menu p-3 shadow-sm column-dropdown">
-            @for (col of allColumns; track col.field) {
-              <div class="form-check">
-                <input type="checkbox" class="form-check-input" [id]="'col_' + col.field" [checked]="visibleColumns.includes(col.field)" (change)="toggleColumn(col.field)" />
-                <label class="form-check-label" [for]="'col_' + col.field">{{ col.label }}</label>
-              </div>
-            }
-          </div>
-        </div>
-      }
-
-      <button class="btn btn-secondary" (click)="resetFilters()"><svg viewBox="0 0 24 24" class="icon"><path d="M13 3v2.09c2.83.48 5.11 2.33 6.3 4.81L21.46 8c-1.35-2.82-3.8-5.07-6.96-6.13L13 3zM12 18c-3.31 0-6-2.69-6-6s2.69-6 6-6c1.01 0 1.95.26 2.8.7l1.45-1.45C15.22 4.13 13.68 3.5 12 3c-4.97 0-9 4.03-9 9s4.03 9 9 9 9-4.03 9-9h-2c0 3.31-2.69 6-6 6z"/></svg> Reset</button>
-      <button class="btn btn-secondary" (click)="exportCSV()"><svg viewBox="0 0 24 24" class="icon"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm-1 7h-2V5h2v4zm4 9h-6v-2h6v2zm-6-4h6v-2h-6v2z"/></svg> Export CSV</button>
-
-      @if (enableBulkStatusToggle) {
-        <div class="btn-group">
-          <button class="btn btn-primary" [disabled]="selectedRows.length === 0" (click)="bulkActivate()">Active</button>
-          <button class="btn btn-danger" [disabled]="selectedRows.length === 0" (click)="bulkDeactivate()">Inactive</button>
-        </div>
-        @if (selectedRows.length) { <small class="text-muted ms-1">({{ selectedRows.length }})</small> }
-      }
+      <button class="btn btn-secondary" (click)="resetFilters()">Reset</button>
+      <button class="btn btn-secondary" (click)="exportCSV()">Export CSV</button>
     </div>
 
-    @if (buttonLabel && buttonRoute) {
-      <button type="button" (click)="onButtonClick()" class="btn btn-primary">
-        <svg viewBox="0 0 24 24" class="icon"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg> 
-        {{ buttonLabel }}
-      </button>
-    }
+    <button *ngIf="buttonLabel" (click)="onButtonClick()" class="btn btn-primary">
+      + {{ buttonLabel }}
+    </button>
   </div>
 
-  @if (loading) { <div class="loading-spinner"><div class="spinner"></div></div> } @else {
-    <div class="table-wrapper">
-      <table class="biz-table">
-        <thead>
-          <tr>
-            <th class="checkbox-col sticky-col"><input type="checkbox" [(ngModel)]="allSelected" (change)="toggleAll()" (click)="$event.stopPropagation()" /></th>
-            @for (col of columns; track col.field) {
-              @if (visibleColumns.includes(col.field)) {
-                <th (click)="toggleSort(col)" class="sortable-col" [class.sticky-col-2]="isFirstVisible(col.field)">
-                  <div class="header-cell">{{ col.label }} @if (sortField === col.field) { <svg viewBox="0 0 24 24" class="sort-icon" [ngClass]="{'asc': sortDirection === 'asc'}"><path d="M7 14l5-5 5 5z"/></svg> }</div>
-                </th>
-              }
-            }
-            @if (hasActions) { <th class="text-end">Actions</th> }
-          </tr>
-        </thead>
-        <tbody>
-          @if ((serverMode ? data.length === 0 : paginatedData.length === 0)) {
-            <tr><td [attr.colspan]="visibleColumns.length + 2" class="no-data">No data found.</td></tr>
-          } @else {
-            @for (row of (serverMode ? data : paginatedData); track row[rowIdField]) {
-              <tr [class.row-selected]="isSelected(row)" [ngClass]="{ 'bg-low-inventory': hasInventoryColumn() && (row['totalInventory'] ?? 0) === 0 }" (click)="onRowClick(row)">
-                <td class="checkbox-col sticky-col" (click)="$event.stopPropagation()"><input type="checkbox" [(ngModel)]="row.selected" (change)="updateSelected(row)" /></td>
-                @for (col of columns; track col.field) {
-                  @if (visibleColumns.includes(col.field)) {
-                    <td [class.sticky-col-2]="isFirstVisible(col.field)">
-                      @if (col.field === 'photos') { @if (row[col.field]?.length > 0) { <img [src]="row[col.field][0]" class="img-thumbnail" width="40" height="40" (error)="onImageError($event)" /> } @else { <span class="text-muted">No Image</span> } }
-                      @else if (col.field === 'activeStatus') { <span class="status-badge" [class.status-active]="row[col.field]" [class.status-inactive]="!row[col.field]" [title]="row[col.field] ? 'Active' : 'Inactive'">{{ row[col.field] ? 'Active' : 'Inactive' }}</span> }
-                      @else if (col.field === 'tags') {
-                        @if (isArray(row[col.field]) && row[col.field].length) { <ng-container> @for (t of row[col.field]; track t) { <span class="tag-badge" [attr.title]="t" [ngStyle]="{ 'background-color': generateBadgeColor(t) }">{{ t }}</span> } </ng-container> } @else { <span class="text-muted">—</span> }
-                      }
-                      @else if (col.field === 'category') { <span class="tag-badge" [attr.title]="getTooltipValue(row[col.field])" [ngStyle]="{ 'background-color': generateBadgeColor(row[col.field]) }">{{ row[col.field] }}</span> }
-                      @else { <span [attr.title]="getTooltipValue(row[col.field])">{{ row[col.field] }}</span> }
-                    </td>
-                  }
-                }
-                @if (hasActions) {
-                  <td class="text-end" (click)="$event.stopPropagation()">
-                    <div class="dropdown">
-                      <button class="btn btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" data-bs-boundary="viewport" data-bs-auto-close="outside">Actions</button>
-                      <ul class="dropdown-menu dropdown-menu-end">
-                        <li *ngIf="actionViewUrlBuilder"><a class="dropdown-item" [href]="actionViewUrlBuilder(row)" target="_blank">View</a></li>
-                        <li><a class="dropdown-item" (click)="onRowClick(row)">Edit</a></li>
-                        <li><hr class="dropdown-divider"></li>
-                        <li><a class="dropdown-item text-danger" (click)="bulkDelete.emit([row])">Delete</a></li>
-                      </ul>
-                    </div>
-                  </td>
-                }
-              </tr>
-            }
+  <div class="table-wrapper">
+    <table class="biz-table">
+      <thead>
+        <tr>
+          <th class="checkbox-col">
+            <input type="checkbox" [(ngModel)]="allSelected" (change)="toggleAll()" />
+          </th>
+          @for (col of columns; track col.field) {
+            <th (click)="toggleSort(col)" class="sortable-header">
+              {{ col.label }}
+              <span *ngIf="sortField === col.field">{{ sortDirection === 'asc' ? '↑' : '↓' }}</span>
+            </th>
           }
-        </tbody>
-      </table>
-    </div>
+        </tr>
+      </thead>
+      <tbody>
+        @for (row of paginatedData; track row) {
+          <tr (click)="onRowClick(row)" class="clickable-row">
+            <td class="checkbox-col" (click)="$event.stopPropagation()">
+              <input type="checkbox" [(ngModel)]="row.selected" (change)="updateSelected(row)" />
+            </td>
+            @for (col of columns; track col.field) {
+              <td>
+                @if (col.field === 'lastVisited') {
+                  {{ row[col.field] | date:'medium' }}
+                } @else if (col.field === 'tier' || col.field === 'loyaltyTier') {
+                   <span class="badge-tier">{{ row[col.field] }}</span>
+                } @else {
+                  {{ row[col.field] }}
+                }
+              </td>
+            }
+          </tr>
+        }
+        @if (paginatedData.length === 0) {
+          <tr><td [attr.colspan]="columns.length + 1" class="text-center py-5">No records found</td></tr>
+        }
+      </tbody>
+    </table>
+  </div>
 
-    @if (showPagination) {
-      <div class="table-footer">
-        <div class="footer-left">
-          <label class="text-muted">Items per page:</label>
-          <select [(ngModel)]="pageSize" (change)="onPageSizeChange()" class="form-select" style="width: 60px">
-            @for (size of [5, 10, 20, 50]; track size) { <option [value]="size">{{ size }}</option> }
-          </select>
-        </div>
-        <div class="footer-right">
-          <small class="text-muted">Page {{ (serverMode ? pageIndex : currentPage) + 1 }} of {{ totalPages }}</small>
-          <button class="btn btn-secondary" [disabled]="(serverMode ? pageIndex : currentPage) === 0" (click)='prevPage()'>Previous</button>
-          <button class="btn btn-secondary" [disabled]="(serverMode ? (pageIndex + 1) : (currentPage + 1)) >= totalPages" (click)="nextPage()">Next</button>
-        </div>
-      </div>
-    }
-  }
+  <div class="table-footer" *ngIf="showPagination">
+    <div class="footer-info">
+      Showing page {{ currentPage + 1 }} of {{ totalPages }}
+    </div>
+    <div class="footer-actions">
+      <button class="btn btn-secondary" [disabled]="currentPage === 0" (click)="prevPage()">Previous</button>
+      <button class="btn btn-secondary" [disabled]="currentPage + 1 >= totalPages" (click)="nextPage()">Next</button>
+    </div>
+  </div>
 </div>

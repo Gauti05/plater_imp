@@ -1,114 +1,175 @@
 :host {
   display: block;
   --bg: #f8f9fa;
-  --ink: #212529;
-  --muted: #6c757d;
-  --border: #dee2e6;
+  --ink: #1e293b;
+  --muted: #64748b;
+  --border: #e2e8f0;
   --card: #ffffff;
   --radius: 12px;
-  --primary: #007bff;
-  --primary-light: #e6f2ff;
-  --ghost-bg: #f1f3f5;
+  --primary: #2563eb;
+  --primary-light: #eff6ff;
+  --ghost-bg: #f8fafc;
 
   background-color: var(--bg);
   min-height: 100vh;
-}
-
-/* =====================================================
-   🌙 GLOBAL DARK MODE MAPPING
-   ===================================================== */
-:host-context(body.dark-mode) {
-  --bg: transparent; 
-  --ink: #F9FAFB;
-  --muted: #94A3B8;
-  --border: #334155;
-  --card: #1E293B;
-  --primary: #6366F1;
-  --primary-light: rgba(99, 102, 241, 0.15);
-  --ghost-bg: #0F172A;
-}
-
-/* Explicit text color fix for Dark Mode */
-:host-context(body.dark-mode) h1,
-:host-context(body.dark-mode) h3,
-:host-context(body.dark-mode) h5,
-:host-context(body.dark-mode) strong,
-:host-context(body.dark-mode) label,
-:host-context(body.dark-mode) p,
-:host-context(body.dark-mode) span {
   color: var(--ink);
 }
 
+/* =========================================
+   🌙 BULLETPROOF DARK MODE OVERRIDES
+   ========================================= */
+/* 1. Force Variables */
+:host-context(body.dark-mode),
+body.dark-mode {
+  --bg: transparent !important; 
+  --ink: #f8fafc !important;
+  --muted: #94a3b8 !important;
+  --border: #334155 !important;
+  --card: #111827 !important;
+  --primary: #3b82f6 !important;
+  --primary-light: rgba(59, 130, 246, 0.15) !important;
+  --ghost-bg: #1e293b !important;
+}
+
+/* 2. FORCE TEXT COLORS (Safely) */
+/* We target headers, paragraphs, and labels, but AVOID global spans/divs to prevent breaking colored badges like "EARN" */
+:host-context(body.dark-mode) h1, :host-context(body.dark-mode) h2, :host-context(body.dark-mode) h3, 
+:host-context(body.dark-mode) h4, :host-context(body.dark-mode) h5, :host-context(body.dark-mode) h6,
+:host-context(body.dark-mode) p, :host-context(body.dark-mode) label, :host-context(body.dark-mode) .title,
+body.dark-mode h1, body.dark-mode h2, body.dark-mode h3, body.dark-mode h4, body.dark-mode h5, body.dark-mode h6,
+body.dark-mode p, body.dark-mode label, body.dark-mode .title {
+    color: var(--ink) !important;
+}
+
+/* 3. FIX TABLE BACKGROUND & TEXT (The Fix for Invisible Date & EARN) */
+/* Force tables to be transparent so the dark card background shows through */
+:host-context(body.dark-mode) table, :host-context(body.dark-mode) .wallet-table,
+:host-context(body.dark-mode) tbody, :host-context(body.dark-mode) tr,
+:host-context(body.dark-mode) th, :host-context(body.dark-mode) td,
+body.dark-mode table, body.dark-mode .wallet-table,
+body.dark-mode tbody, body.dark-mode tr,
+body.dark-mode th, body.dark-mode td {
+    background-color: transparent !important;
+    --bs-table-bg: transparent !important; /* Defeat Bootstrap's native table backgrounds */
+    border-bottom-color: var(--border) !important;
+}
+
+/* Base text color for table cells (using standard priority so colored spans like "EARN" still work) */
+:host-context(body.dark-mode) .wallet-table td, 
+body.dark-mode .wallet-table td {
+    color: var(--ink); 
+}
+
+/* Headers get muted text */
+:host-context(body.dark-mode) .wallet-table th, 
+body.dark-mode .wallet-table th {
+    color: var(--muted) !important; 
+}
+
+
+/* 4. Fix Components */
+:host-context(body.dark-mode) .card, :host-context(body.dark-mode) .header1, :host-context(body.dark-mode) .modal-content,
+body.dark-mode .card, body.dark-mode .header1, body.dark-mode .modal-content { 
+    background-color: var(--card) !important; 
+    border-color: var(--border) !important; 
+}
+
+:host-context(body.dark-mode) .metric, body.dark-mode .metric {
+    background-color: var(--ghost-bg) !important;
+    border-color: var(--border) !important;
+}
+
+:host-context(body.dark-mode) .form-control, :host-context(body.dark-mode) select.form-select,
+body.dark-mode .form-control, body.dark-mode select.form-select { 
+    background-color: var(--ghost-bg) !important; 
+    border-color: var(--border) !important; 
+    color: var(--ink) !important; 
+}
+
+/* =========================================
+   SaaS UI REFINEMENTS (Original Layout)
+   ========================================= */
 * { box-sizing: border-box; }
 
-.crm.wrapper {
-  color: var(--ink);
-  background: var(--bg);
-}
-
-.grid { display: grid; grid-template-columns: 1fr 1.5fr; gap: 20px; }
-.grid.two { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.crm.wrapper { color: var(--ink); background: var(--bg); font-family: 'Inter', sans-serif; }
+.grid { display: grid; grid-template-columns: 1fr 1.5fr; gap: 24px; }
+.grid.two { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
 
 /* Cards */
 .card {
   background: var(--card);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  padding: 16px;
-  margin-bottom: 20px;
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.04);
+  padding: 24px;
+  margin-bottom: 24px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.02), 0 4px 12px rgba(0,0,0,0.02);
 }
 
-.card-head h5 { margin: 0; font-size: 15px; font-weight: 600; color: var(--ink); }
+.card-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+.card-head h5 { margin: 0; font-size: 16px; font-weight: 600; color: var(--ink); letter-spacing: -0.01em; }
 
 .header1 {
-  display: grid; grid-template-columns: 1.2fr 1fr; gap: 20px;
+  display: grid; grid-template-columns: 1fr 1.2fr; gap: 24px;
   background: var(--card); border: 1px solid var(--border);
-  border-radius: var(--radius); padding: 20px; margin-bottom: 20px;
+  border-radius: var(--radius); padding: 24px; margin-bottom: 24px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.02), 0 4px 12px rgba(0,0,0,0.02);
 }
 
 .avatar {
-  width: 56px; height: 56px; border-radius: 50%;
-  background: var(--primary); color: #fff;
+  width: 64px; height: 64px; border-radius: 50%;
+  background: var(--primary); color: #fff; font-size: 20px;
   display: grid; place-items: center; font-weight: 700;
 }
 
-.title { margin: 0; font-size: 22px; font-weight: 700; color: var(--ink); }
-.sub { display: flex; flex-wrap: wrap; gap: 12px; color: var(--muted); font-size: 14px; margin-top: 8px; }
+.id-block { display: flex; gap: 20px; align-items: center; }
+.title { margin: 0; font-size: 22px; font-weight: 700; color: var(--ink); letter-spacing: -0.02em; }
+.sub { display: flex; flex-wrap: wrap; gap: 12px; color: var(--muted); font-size: 14px; margin-top: 6px; align-items: center; }
+.pill-row { margin-top: 12px; display: flex; gap: 8px; }
 
-.pill { font-size: 12px; padding: 4px 10px; border-radius: 999px; font-weight: 600; background: var(--ghost-bg); color: var(--ink); }
-.pill.vip { background: #ffe6a0; color: #a06e00; }
-.pill.frequent { background: #c5d7ff; color: #0052cc; }
+.pill { font-size: 12px; padding: 4px 12px; border-radius: 999px; font-weight: 600; background: var(--ghost-bg); color: var(--ink); }
+.pill.vip { background: #fef3c7; color: #b45309; }
+.pill.frequent { background: #e0e7ff; color: #1d4ed8; }
 
-.metric { background: var(--ghost-bg); border: 1px solid var(--border); border-radius: 10px; padding: 12px; transition: box-shadow 0.2s; }
-.metric:hover { box-shadow: 0 6px 18px rgba(0,0,0,0.06); }
-.metric strong { color: var(--ink); }
+.metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 16px; }
+.metric { 
+  background: var(--ghost-bg); border: 1px solid var(--border); 
+  border-radius: 10px; padding: 16px; 
+  display: flex; flex-direction: column; justify-content: center;
+}
+.metric span { font-size: 12px; font-weight: 500; color: var(--muted); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.05em; }
+.metric strong { color: var(--ink); font-size: 20px; line-height: 1.2; font-weight: 700; }
+.metric small { font-size: 11px; color: var(--muted); margin-top: 4px; }
+.mini-metrics { display: flex; gap: 16px; }
 
 /* Pipeline */
-.stage { background: var(--ghost-bg); border: 1px solid var(--border); border-radius: 6px; padding: 8px; text-align: center; color: var(--muted); font-size: 12px; }
-.stage.active { background: var(--primary-light); border-color: var(--primary); color: var(--primary); }
+.pipeline { display: flex; gap: 8px; flex-wrap: wrap; }
+.stage { background: var(--ghost-bg); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; text-align: center; color: var(--muted); font-size: 12px; font-weight: 500; flex: 1; transition: 0.2s; }
+.stage.active { background: var(--primary-light); border-color: var(--primary); color: var(--primary); font-weight: 600; }
+.inline-controls select { border: 1px solid var(--border); border-radius: 8px; padding: 8px 12px; background: var(--card); color: var(--ink); width: 100%; font-size: 14px; outline: none; transition: 0.2s; }
+.inline-controls select:focus { border-color: var(--primary); }
 
-.inline-controls select { border: 1px solid var(--border); border-radius: 6px; padding: 6px 10px; background: var(--card); color: var(--ink); }
-
-/* Timeline & Bubble */
-.bubble { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 12px; color: var(--ink); }
-.avatar.mini { width: 32px; height: 32px; border-radius: 50%; background: var(--ghost-bg); display: grid; place-items: center; }
+/* Custom Premium Wallet Table */
+.wallet-table th { border-bottom: 2px solid var(--border); color: var(--muted); font-weight: 600; font-size: 12px; text-transform: uppercase; padding: 12px 8px; letter-spacing: 0.05em; }
+.wallet-table td { border-bottom: 1px solid var(--border); padding: 16px 8px; font-size: 14px; vertical-align: middle; color: var(--ink); }
+.wallet-table tbody tr:last-child td { border-bottom: none; }
 
 /* Buttons */
-.btn { border: 1px solid var(--border); background: var(--card); color: var(--ink); border-radius: 6px; padding: 8px 12px; cursor: pointer; transition: 0.2s; }
+.btn { border: 1px solid var(--border); background: var(--card); color: var(--ink); border-radius: 8px; padding: 8px 16px; font-weight: 500; cursor: pointer; transition: 0.2s; font-size: 13px; }
 .btn.primary { background: var(--primary); color: #fff !important; border: none; }
-.btn.ghost { background: transparent; border-color: transparent; color: var(--primary); }
+.btn.ghost { background: transparent; border-color: transparent; color: var(--primary); font-weight: 600; }
 .btn:hover { background: var(--ghost-bg); }
+.btn.tiny { padding: 4px 10px; font-size: 12px; }
 
-/* Calendar */
-.calendar { background: var(--card); border: 1px solid var(--border); border-radius: 8px; color: var(--ink); }
-:host-context(body.dark-mode) .fc { color: var(--ink); }
-:host-context(body.dark-mode) .fc-daygrid-day { background: var(--card); }
+/* Timeline & Reminders */
+.list .item { display: flex; justify-content: space-between; align-items: center; padding: 16px 0; border-bottom: 1px solid var(--border); }
+.list .item:last-child { border-bottom: none; padding-bottom: 0; }
+.list .item .left { display: flex; gap: 16px; align-items: center; }
+.avatar.mini { width: 36px; height: 36px; border-radius: 50%; background: var(--ghost-bg); display: grid; place-items: center; font-size: 16px; }
+.list .line { font-weight: 600; color: var(--ink); margin-bottom: 4px; font-size: 14px; }
 
-/* Charts */
-.chart-wrap { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 12px; }
+/* Gauge Chart */
+.gauge { position: relative; display: flex; justify-content: center; }
+.gauge-center { position: absolute; top: 55%; left: 50%; transform: translate(-50%, -50%); text-align: center; }
+.gauge-center .big { font-size: 36px; font-weight: 800; color: var(--ink); line-height: 1; margin-bottom: 4px; }
 
-/* Tags */
-.tag { background: var(--ghost-bg); border: 1px solid var(--border); color: var(--ink); padding: 5px 10px; border-radius: 6px; margin: 4px !important; display: inline-block; }
-
-.assignee-pill { background: var(--primary-light); color: var(--primary); padding: 4px 10px; border-radius: 999px; font-size: 13px; }
+.assignee-pill { background: var(--primary-light); color: var(--primary); padding: 6px 14px; border-radius: 999px; font-size: 13px; font-weight: 600; display: inline-flex; align-items: center; }

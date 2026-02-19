@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule, CurrencyPipe, TitleCasePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -13,16 +13,16 @@ import {
   orderBy,
   getDocs,
   where,
-  limit,
+  documentId,
 } from '@angular/fire/firestore';
 import {
   getStorage,
   ref,
   uploadBytes,
-  getDownloadURL,
-  deleteObject 
+  getDownloadURL
 } from '@angular/fire/storage';
 import { NgxImageCompressService } from 'ngx-image-compress'; 
+import { Auth, authState } from '@angular/fire/auth'; 
 
 interface MenuItem {
   id?: string;
@@ -35,7 +35,6 @@ interface MenuItem {
   isActive: boolean;
   imageUrl?: string;
   trackInventory: boolean;
-  // 👇 NEW: Tax rate property
   taxRate?: number; 
 }
 
@@ -55,6 +54,7 @@ interface RawMaterial {
   styleUrls: ['./add-menu.component.css']
 })
 export class AddMenuComponent implements OnInit {
+  private fireAuth = inject(Auth); 
   isEditMode = false;
   isSaving = false;
   isSyncingCategories = false; 
@@ -68,7 +68,6 @@ export class AddMenuComponent implements OnInit {
     recipe: [],
     isActive: true,
     trackInventory: true,
-    // 👇 NEW: Default tax rate
     taxRate: 0 
   };
 
@@ -87,12 +86,13 @@ export class AddMenuComponent implements OnInit {
   targetProfitMargin = 50;
   imageFile: File | null = null;
   imagePreviewUrl: string | ArrayBuffer | null = null;
-  
   private imageStoragePath: string | null = null; 
 
   totalServingsInInventory = 0;
-
   storeSlug = '';
+
+  publishToAll = false;
+  allStoreSlugs: string[] = [];
 
   private readonly unitConversionMap: { [key: string]: [string, number] } = {
     'kg': ['g', 1000],
@@ -120,6 +120,17 @@ export class AddMenuComponent implements OnInit {
     const slug = root.firstChild?.paramMap.get('storeSlug');
     this.storeSlug = slug || '';
     
+    // ⭐ THE FIX: Fetch the user's actual stores to sync to, instead of locking behind Superadmin
+    authState(this.fireAuth).subscribe(async (user) => {
+      if (user) {
+        const userDoc = await getDoc(doc(this.firestore, `Users/${user.uid}`));
+        const userData = userDoc.data();
+        if (userData) {
+          await this.loadAllStores(user.uid, userData['storeId'], userData['userRole']); 
+        }
+      }
+    });
+
     await this.loadCategories(); 
     await this.loadRawMaterials();
 
@@ -130,75 +141,49 @@ export class AddMenuComponent implements OnInit {
     }
   }
 
-  /* ---------------- Categories ---------------- */
-  private async seedCategoriesFromMenuItems(): Promise<void> {
-      const menuCol = collection(this.firestore, `Stores/${this.storeSlug}/menuItems`);
-      const catCol = collection(this.firestore, `Stores/${this.storeSlug}/menuCategories`);
+  // ⭐ THE FIX: Properly gather all branches belonging to this SaaS user
+  async loadAllStores(uid: string, assignedStoreId: string, role: string) {
+    const storesRef = collection(this.firestore, 'Stores');
+    
+    if (role === 'Superadmin') {
+      const storesSnap = await getDocs(storesRef);
+      this.allStoreSlugs = storesSnap.docs.map(d => d.data()['slug'] || d.id);
+    } else {
+      // Gather assigned store + owned stores (Same fix applied to store selector)
+      const qAssigned = getDocs(query(storesRef, where(documentId(), '==', assignedStoreId || '')));
+      const qOwned = getDocs(query(storesRef, where('ownerId', '==', uid)));
 
-      const menuSnapshot = await getDocs(menuCol);
-      const uniqueMenuCategories = Array.from(new Set(
-          menuSnapshot.docs
-              .map(d => (d.data() as MenuItem).category)
-              .filter(cat => !!cat)
-      ));
-
-      if (uniqueMenuCategories.length === 0) return;
-
-      const existingCategoriesSnapshot = await getDocs(catCol);
-      const existingCategoryNames = existingCategoriesSnapshot.docs
-          .map(d => d.data()['name']);
-
-      const categoriesToSeed = uniqueMenuCategories.filter(cat => 
-          !existingCategoryNames.includes(cat)
-      );
-
-      if (categoriesToSeed.length > 0) {
-          for (const categoryName of categoriesToSeed) {
-              const newDocRef = doc(catCol);
-              await setDoc(newDocRef, { name: categoryName });
-          }
-      }
+      const [snapAssigned, snapOwned] = await Promise.all([qAssigned, qOwned]);
+      
+      const allDocs = [...snapAssigned.docs, ...snapOwned.docs];
+      const uniqueSlugs = Array.from(new Set(allDocs.map(d => d.data()['slug'] || d.id)));
+      
+      this.allStoreSlugs = uniqueSlugs;
+    }
   }
-  
+
   async loadCategories(): Promise<void> {
     const categoryCollection = collection(this.firestore, `Stores/${this.storeSlug}/menuCategories`);
-    
     const querySnapshot = await getDocs(query(categoryCollection, orderBy('name', 'asc')));
-
-    const categories = querySnapshot.docs
-        .map(d => d.data()['name'])
-        .filter(name => !!name);
-
-    this.availableCategories = Array.from(new Set(categories));
-    
-    if (!this.isEditMode) {
-      this.menuItem.category = '';
-    }
+    this.availableCategories = querySnapshot.docs.map(d => d.data()['name']).filter(name => !!name);
   }
 
   async saveNewCategory() {
     if (!this.newCategory.trim()) return;
     const categoryCollection = collection(this.firestore, `Stores/${this.storeSlug}/menuCategories`);
-    const newDocRef = doc(categoryCollection);
-    
-    await setDoc(newDocRef, { name: this.newCategory.trim() });
-    
+    await setDoc(doc(categoryCollection), { name: this.newCategory.trim() });
     const newCatName = this.newCategory.trim();
     if (!this.availableCategories.includes(newCatName)) {
         this.availableCategories = [...this.availableCategories, newCatName].sort();
     }
-    
     this.menuItem.category = newCatName;
-    
     this.newCategory = '';
     this.showNewCategoryInput = false;
   }
  
-  /* ---------------- Raw Materials ---------------- */
   async loadRawMaterials() {
     const rawMaterialCollection = collection(this.firestore, `Stores/${this.storeSlug}/rawMaterials`);
-    const q = query(rawMaterialCollection, orderBy('name', 'asc'));
-    const querySnapshot = await getDocs(q);
+    const querySnapshot = await getDocs(query(rawMaterialCollection, orderBy('name', 'asc')));
     this.availableRawMaterials = querySnapshot.docs.map(d => ({
       id: d.id,
       name: d.data()['name'],
@@ -208,219 +193,70 @@ export class AddMenuComponent implements OnInit {
     }));
   }
 
-  /* ---------------- Load Existing ---------------- */
   async loadMenuItem(id: string) {
     const docRef = doc(this.firestore, `Stores/${this.storeSlug}/menuItems/${id}`);
     const snap = await getDoc(docRef);
     if (!snap.exists()) {
-      console.error('Menu item not found.');
       this.router.navigate(['/', this.storeSlug, 'inventory', 'menu-items']);
       return;
     }
-
-    const data = snap.data() as MenuItem;
-    this.menuItem = { id: snap.id, ...data };
-    
-    if (this.menuItem.imageUrl) {
-      this.imagePreviewUrl = this.menuItem.imageUrl;
-      const url = new URL(this.menuItem.imageUrl);
-      this.imageStoragePath = url.pathname; 
-    }
-
-    // Ensure taxRate is set to 0 if it was missing in old data
-    if (this.menuItem.taxRate === undefined || this.menuItem.taxRate === null) {
-      this.menuItem.taxRate = 0;
-    }
-
+    this.menuItem = { id: snap.id, ...snap.data() as MenuItem };
+    if (this.menuItem.imageUrl) this.imagePreviewUrl = this.menuItem.imageUrl;
     this.calculateTotalServings();
   }
 
-  /* ---------------- Image Upload & Compression ---------------- */
-  private dataURItoBlob(dataURI: string, fileName: string): File {
-    const split = dataURI.split(',');
-    const mime = split[0].match(/:(.*?);/)?.[1] || 'image/jpeg';
-    const byteString = atob(split[1]);
-    const ab = new ArrayBuffer(byteString.length);
-    const ia = new Uint8Array(ab);
-
-    for (let i = 0; i < byteString.length; i++) {
-      ia[i] = byteString.charCodeAt(i);
-    }
-
-    const blob = new Blob([ab], { type: mime });
-    return new File([blob], fileName, { type: mime });
-  }
-
-  async uploadImageToStorage(file: File, name: string): Promise<string> {
-    const storage = getStorage();
-    const fileName = `${name.replace(/\s+/g, '_').toLowerCase()}_${Date.now()}.jpg`;
-    const storageRef = ref(storage, `menuImages/${this.storeSlug}/${fileName}`);
-    await uploadBytes(storageRef, file);
-    return await getDownloadURL(storageRef);
-  }
-
-  handleImageChange(event: any) {
-    const file = event.target.files[0];
-    if (!file) return;
-    
-    this.imageFile = null;
-    this.imagePreviewUrl = null;
-    this.imageStoragePath = null;
-    this.menuItem.imageUrl = undefined;
-
-    const reader = new FileReader();
-
-    reader.onload = async (e: any) => {
-      const imageBase64 = e.target.result;
-
-      this.imageCompress.compressFile(imageBase64, -1, 50, 50, 800, 800).then(
-        (compressedBase64: string) => {
-          const compressedFile = this.dataURItoBlob(compressedBase64, file.name);
-
-          this.imageFile = compressedFile;
-          this.imagePreviewUrl = compressedBase64;
-        },
-        (error) => {
-          console.error('Image compression failed, uploading original:', error);
-          this.imageFile = file;
-          this.imagePreviewUrl = imageBase64;
-        }
-      );
-    };
-
-    reader.readAsDataURL(file);
-  }
-  
-  removeImage() {
-    this.imageFile = null;
-    this.imagePreviewUrl = null;
-    this.menuItem.imageUrl = undefined; 
-    
-    this.imageStoragePath = null;
-    
-    const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
-    if (fileInput) fileInput.value = '';
-  }
-
-
-  /* ---------------- Unit Conversion Logic ---------------- */
-
-  getDisplayUnit(baseUnit: string): string {
-    const unit = baseUnit.toLowerCase();
-    const conversion = this.unitConversionMap[unit];
-
-    if (conversion) {
-      return conversion[0];
-    }
-
-    return baseUnit;
-  }
-
-  convertToBaseUnit(baseUnit: string, quantityInDisplayUnit: number): number {
-    const unit = baseUnit.toLowerCase();
-    const conversion = this.unitConversionMap[unit];
-
-    if (conversion) {
-      const factor = conversion[1];
-      return factor > 0 ? quantityInDisplayUnit / factor : quantityInDisplayUnit;
-    }
-
-    return quantityInDisplayUnit;
-  }
-
-  convertToDisplayUnit(baseUnit: string, quantityInBaseUnit: number): number {
-    const unit = baseUnit.toLowerCase();
-    const conversion = this.unitConversionMap[unit];
-
-    if (conversion) {
-      const factor = conversion[1];
-      return quantityInBaseUnit * factor;
-    }
-
-    return quantityInBaseUnit;
-  }
-
-  onRawMaterialSelect() {
-    const selected = this.availableRawMaterials.find(rm => rm.id === this.selectedRawMaterialId);
-    this.selectedDisplayUnit = selected ? this.getDisplayUnit(selected.unit) : '';
-  }
-
-  /* ---------------- Save Menu Item ---------------- */
   async saveMenuItem() {
-    if (this.showNewCategoryInput && this.newCategory) {
-      await this.saveNewCategory(); 
-    }
-
-    if (!this.menuItem.name || !this.menuItem.category || this.menuItem.price <= 0) {
-      console.error('Required fields missing');
-      return;
-    }
+    if (this.showNewCategoryInput && this.newCategory) await this.saveNewCategory(); 
+    if (!this.menuItem.name || !this.menuItem.category || this.menuItem.price <= 0) return;
 
     this.isSaving = true;
-
     try {
       if (this.imageFile) {
         this.menuItem.imageUrl = await this.uploadImageToStorage(this.imageFile, this.menuItem.name);
-      } else if (this.menuItem.imageUrl === undefined) {
-        this.menuItem.imageUrl = ''; 
       }
 
-      const col = collection(this.firestore, `Stores/${this.storeSlug}/menuItems`);
-      if (this.isEditMode && this.menuItem.id) {
-        await updateDoc(doc(col, this.menuItem.id), this.menuItem as any);
+      const itemId = this.menuItem.id || doc(collection(this.firestore, `temp`)).id;
+      this.menuItem.id = itemId;
+
+      // ⭐ Sync logic is now active for normal users!
+      if (this.publishToAll && this.allStoreSlugs.length > 0) {
+        const savePromises = this.allStoreSlugs.map(async (slug) => {
+          // 1. Make sure the category exists in the other store
+          const catRef = collection(this.firestore, `Stores/${slug}/menuCategories`);
+          const catCheck = await getDocs(query(catRef, where('name', '==', this.menuItem.category)));
+          if (catCheck.empty) await setDoc(doc(catRef, doc(collection(this.firestore, 'temp')).id), { name: this.menuItem.category });
+          
+          // 2. Save the menu item
+          const colRef = collection(this.firestore, `Stores/${slug}/menuItems`);
+          return setDoc(doc(colRef, itemId), this.menuItem as any, { merge: true });
+        });
+        await Promise.all(savePromises);
       } else {
-        await setDoc(doc(col), this.menuItem as any);
+        const colRef = collection(this.firestore, `Stores/${this.storeSlug}/menuItems`);
+        await setDoc(doc(colRef, itemId), this.menuItem as any, { merge: true });
       }
 
-      setTimeout(() => {
-        this.isSaving = false;
-        this.router.navigate(['/', this.storeSlug, 'inventory', 'menu-items']);
-      }, 1000);
+      this.isSaving = false;
+      this.router.navigate(['/', this.storeSlug, 'inventory', 'menu-items']);
     } catch (e) {
       console.error('Save error:', e);
       this.isSaving = false;
     }
   }
 
-  /* ---------------- Allergens ---------------- */
-  toggleAllergen(a: string) {
-    const arr = this.menuItem.allergens || [];
-    const i = arr.indexOf(a);
-    i > -1 ? arr.splice(i, 1) : arr.push(a);
-    this.menuItem.allergens = arr;
-  }
-
-  isAllergenSelected(a: string): boolean {
-    return this.menuItem.allergens?.includes(a) || false;
-  }
-
-  /* ---------------- Recipe ---------------- */
   addIngredientToRecipe() {
     if (!this.selectedRawMaterialId || this.recipeQuantity <= 0) return;
-
     const mat = this.availableRawMaterials.find(r => r.id === this.selectedRawMaterialId);
     if (!mat) return;
-
-    if (!this.menuItem.recipe) this.menuItem.recipe = [];
-
     const baseQtyToAdd = this.convertToBaseUnit(mat.unit, this.recipeQuantity);
-
-    const existing = this.menuItem.recipe.find(r => r.rawMaterialId === mat.id);
-
+    const existing = this.menuItem.recipe?.find(r => r.rawMaterialId === mat.id);
     if (existing) {
       existing.quantity += baseQtyToAdd;
     } else {
-      this.menuItem.recipe.push({
-        rawMaterialId: mat.id,
-        name: mat.name,
-        quantity: baseQtyToAdd, 
-        unit: mat.unit
-      });
+      if (!this.menuItem.recipe) this.menuItem.recipe = [];
+      this.menuItem.recipe.push({ rawMaterialId: mat.id, name: mat.name, quantity: baseQtyToAdd, unit: mat.unit });
     }
-
-    this.selectedRawMaterialId = '';
-    this.recipeQuantity = 0;
-    this.selectedDisplayUnit = '';
+    this.selectedRawMaterialId = ''; this.recipeQuantity = 0;
     this.calculateTotalServings();
   }
 
@@ -429,64 +265,98 @@ export class AddMenuComponent implements OnInit {
     this.calculateTotalServings();
   }
 
-  /* ---------------- Calculations ---------------- */
-  get totalPlateCost(): number {
-    return (
-      this.menuItem.recipe?.reduce((sum, ing) => {
-        const mat = this.availableRawMaterials.find(r => r.id === ing.rawMaterialId);
-        return sum + (mat ? mat.costPerUnit * ing.quantity : 0);
-      }, 0) || 0
-    );
+  handleImageChange(event: any) {
+    const file = event.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (e: any) => {
+      this.imageCompress.compressFile(e.target.result, -1, 50, 50, 800, 800).then(
+        (compressed) => {
+          this.imageFile = this.dataURItoBlob(compressed, file.name);
+          this.imagePreviewUrl = compressed;
+        }
+      );
+    };
+    reader.readAsDataURL(file);
   }
 
-  /**
-   * 👇 RENAMED: Calculates the recommended price EXCLUDING tax based on target margin.
-   */
+  private dataURItoBlob(dataURI: string, fileName: string): File {
+    const split = dataURI.split(',');
+    const byteString = atob(split[1]);
+    const ab = new ArrayBuffer(byteString.length);
+    const ia = new Uint8Array(ab);
+    for (let i = 0; i < byteString.length; i++) ia[i] = byteString.charCodeAt(i);
+    return new File([ab], fileName, { type: split[0].match(/:(.*?);/)?.[1] || 'image/jpeg' });
+  }
+
+  async uploadImageToStorage(file: File, name: string): Promise<string> {
+    const storage = getStorage();
+    const storageRef = ref(storage, `menuImages/central/${Date.now()}_${file.name}`);
+    await uploadBytes(storageRef, file);
+    return await getDownloadURL(storageRef);
+  }
+
+  removeImage() {
+    this.imageFile = null; this.imagePreviewUrl = null; delete this.menuItem.imageUrl;
+  }
+
+  getDisplayUnit(baseUnit: string): string {
+    return this.unitConversionMap[baseUnit.toLowerCase()]?.[0] || baseUnit;
+  }
+
+  convertToBaseUnit(baseUnit: string, qty: number): number {
+    const factor = this.unitConversionMap[baseUnit.toLowerCase()]?.[1] || 1;
+    return qty / factor;
+  }
+
+  convertToDisplayUnit(baseUnit: string, qty: number): number {
+    const factor = this.unitConversionMap[baseUnit.toLowerCase()]?.[1] || 1;
+    return qty * factor;
+  }
+
+  onRawMaterialSelect() {
+    const selected = this.availableRawMaterials.find(rm => rm.id === this.selectedRawMaterialId);
+    this.selectedDisplayUnit = selected ? this.getDisplayUnit(selected.unit) : '';
+  }
+
+  get totalPlateCost(): number {
+    return this.menuItem.recipe?.reduce((sum, ing) => {
+      const mat = this.availableRawMaterials.find(r => r.id === ing.rawMaterialId);
+      return sum + (mat ? mat.costPerUnit * ing.quantity : 0);
+    }, 0) || 0;
+  }
+
   get recommendedBaseSellingPrice(): number {
     const margin = this.targetProfitMargin / 100;
     const basePrice = this.totalPlateCost / (1 - margin);
-    return isNaN(basePrice) || !isFinite(basePrice) ? 0 : basePrice;
+    return isFinite(basePrice) ? basePrice : 0;
   }
 
-  /**
-   * 👇 NEW: Calculates the final price INCLUDING tax.
-   */
   get recommendedSellingPriceWithTax(): number {
     const basePrice = this.recommendedBaseSellingPrice;
     const taxRate = (this.menuItem.taxRate || 0) / 100;
-    // Price Incl. Tax = Base Price * (1 + Tax Rate)
-    const priceWithTax = basePrice * (1 + taxRate);
-    return isNaN(priceWithTax) || !isFinite(priceWithTax) ? 0 : priceWithTax;
+    return basePrice * (1 + taxRate);
   }
 
-  // OLD GETTER: Aliased to the new price-with-tax getter to update the Price input hint.
-  // Note: This relies on the original HTML binding being `recommendedSellingPrice`
-  get recommendedSellingPrice(): number {
-    return this.recommendedSellingPriceWithTax;
-  }
-  
   calculateTotalServings() {
-    if (!this.menuItem.trackInventory) {
-      this.totalServingsInInventory = this.INF;
-      return;
-    }
-    if (!this.menuItem.recipe?.length) {
-      this.totalServingsInInventory = 0;
-      return;
-    }
-
+    if (!this.menuItem.trackInventory) { this.totalServingsInInventory = this.INF; return; }
+    if (!this.menuItem.recipe?.length) { this.totalServingsInInventory = 0; return; }
     let max = this.INF;
     for (const ing of this.menuItem.recipe) {
       const mat = this.availableRawMaterials.find(r => r.id === ing.rawMaterialId);
-
       if (mat && ing.quantity > 0) {
-        const s = Math.floor(mat.stock / ing.quantity);
-        if (s < max) max = s;
-      } else {
-        max = 0;
-        break;
-      }
+        max = Math.min(max, Math.floor(mat.stock / ing.quantity));
+      } else { max = 0; break; }
     }
     this.totalServingsInInventory = max;
   }
+
+  toggleAllergen(a: string) {
+    const arr = this.menuItem.allergens || [];
+    const i = arr.indexOf(a);
+    i > -1 ? arr.splice(i, 1) : arr.push(a);
+    this.menuItem.allergens = arr;
+  }
+
+  isAllergenSelected(a: string): boolean { return this.menuItem.allergens?.includes(a) || false; }
 }

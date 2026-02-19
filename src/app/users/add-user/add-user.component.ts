@@ -158,6 +158,9 @@
 //   }
 // }
 
+
+
+
 import { Component, OnInit, ViewEncapsulation, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, NgForm } from '@angular/forms';
@@ -166,7 +169,6 @@ import { Auth } from '@angular/fire/auth';
 import { Firestore, doc, getDoc, setDoc, updateDoc, serverTimestamp } from '@angular/fire/firestore';
 import { StoreContextService } from '../../core/store-context.service';
 
-// ⭐ IMPORT DOUBLE-AUTH FUNCTIONS AND ENVIRONMENT
 import { initializeApp, deleteApp } from 'firebase/app';
 import { getAuth, createUserWithEmailAndPassword as createSecondaryUser, signOut as signOutOfSecondary } from 'firebase/auth';
 import { environment } from '../../../environments/environment.development';
@@ -178,6 +180,7 @@ interface User {
   email: string;
   password?: string;
   roles: string[];
+  userRole: string; // ⭐ Simplified
   isActive: boolean;
   storeId?: string;
 }
@@ -203,6 +206,7 @@ export class AddUserComponent implements OnInit {
     email: '',
     password: '',
     roles: ['Sales'],
+    userRole: 'Staff', // Default employee level
     isActive: true,
   });
 
@@ -235,7 +239,7 @@ export class AddUserComponent implements OnInit {
     this.loading.set(true);
     const storeId = this.storeContext.currentStoreId;
     try {
-      const userDocRef = doc(this.firestore, `Stores/${storeId}/users`, id);
+      const userDocRef = doc(this.firestore, `Users`, id);
       const userDoc = await getDoc(userDocRef);
       if (userDoc.exists()) {
         const userData = userDoc.data() as User;
@@ -267,61 +271,52 @@ export class AddUserComponent implements OnInit {
     this.error.set(null);
 
     try {
-      // const usersColPath = `Stores/${storeId}/users`;
-      const usersColPath = `users`;
+      const usersColPath = `Users`;
 
       if (this.isEditMode() && this.userId) {
-        // --- EDIT MODE (Standard Firestore update) ---
         const userDocRef = doc(this.firestore, usersColPath, this.userId);
         await updateDoc(userDocRef, {
           name: this.user().name,
           designation: this.user().designation,
           email: this.user().email,
           roles: this.user().roles,
+          userRole: this.user().userRole, 
           isActive: this.user().isActive,
         });
         alert('User Updated Successfully!');
         this.router.navigate(['/', this.storeSlug, 'users']);
         
       } else {
-        // --- CREATE MODE (Double Auth Flow) ---
-        
-        // 1. Initialize the secondary app instance
         const secondaryApp = initializeApp(environment.firebaseConfig, 'SecondaryAppInstance');
         const secondaryAuth = getAuth(secondaryApp);
 
         try {
-          // 2. Create the user on the secondary connection
           const userCredential = await createSecondaryUser(secondaryAuth, this.user().email, this.user().password!);
           const newUid = userCredential.user.uid;
 
-          // 3. Immediately sign out the new user from the secondary connection
           await signOutOfSecondary(secondaryAuth);
 
-          // 4. Save profile in Firestore using the primary app instance
           const userDocRef = doc(this.firestore, usersColPath, newUid);
           await setDoc(userDocRef, {
             name: this.user().name,
             designation: this.user().designation,
             email: this.user().email,
             roles: this.user().roles,
+            userRole: this.user().userRole, 
             isActive: this.user().isActive,
             storeId: storeId,
             createdAt: serverTimestamp()
           });
 
-          // 5. Navigate back to the list cleanly
-          alert('User created successfully! You are still logged in as Admin.');
+          alert('User created successfully!');
           this.router.navigate(['/', this.storeSlug, 'users']);
           
         } finally {
-          // 6. CRITICAL: Delete the temporary app to prevent memory leaks and duplicate app errors
           await deleteApp(secondaryApp);
         }
       }
     } catch (e: any) {
       console.error("Error saving user:", e);
-      // Friendly error handling
       if (e.code === 'auth/email-already-in-use') {
         this.error.set('This email is already in use by another account.');
       } else if (e.code === 'auth/weak-password') {

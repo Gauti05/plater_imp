@@ -38,10 +38,7 @@
                 style="min-width: 60px; margin-left: 8px;">
                 {{ showNewCategoryInput ? 'Cancel' : '+ New' }}
               </button>
-
             </div>
-            
-          
           </div>
         </div>
 
@@ -214,6 +211,11 @@
       </section>
 
       <section class="card card-actions-block">
+        <div class="form-group" style="margin-bottom: 16px; display: flex; align-items: center; gap: 8px; flex-direction: row;">
+          <input type="checkbox" id="publishAll" [(ngModel)]="publishToAll" name="publishToAll" style="width: 16px; height: 16px; cursor: pointer;">
+          <label for="publishAll" style="font-size: 14px; font-weight: 500; color: #374151; cursor: pointer; margin: 0;">Publish to all outlets</label>
+        </div>
+
         <button type="submit" class="btn btn-primary btn-block" (click)="saveMenuItem()">
           <svg viewBox="0 0 24 24" class="icon">
             <path d="M17 3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V7l-4-4zM5 19V5h10.59L19 8.41V19H5zm4-8h6v2H9v-2zm0 4h6v2H9v-2z"/>

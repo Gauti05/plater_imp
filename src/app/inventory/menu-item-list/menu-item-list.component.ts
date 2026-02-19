@@ -7,7 +7,7 @@ import {
   doc, 
   getDoc, 
   setDoc, 
-  deleteDoc, // 1. Added deleteDoc
+  deleteDoc, 
   DocumentData 
 } from '@angular/fire/firestore'; 
 import { Router, ActivatedRoute } from '@angular/router';
@@ -48,29 +48,33 @@ export class MenuItemListComponent implements OnInit {
   ];
 
   async ngOnInit(): Promise<void> { 
-    const root = this.route.snapshot.root;
-    const slug = root.firstChild?.paramMap.get('storeSlug');
-    this.storeSlug = slug || '';
-    
-    if (this.storeSlug) {
-      this.tableState = await this.loadTableState();
-      this.isLoadingState = false; 
-      this.loadMenuItems();
-    } else {
-      this.isLoadingState = false;
-    }
-  }
-
-  private loadMenuItems() {
-    const ref = collection(this.firestore, `Stores/${this.storeSlug}/menuItems`);
-    collectionData(ref, { idField: 'id' }).subscribe(data => {
-      this.menuItems = data;
-      this.filters.find(f => f.field === 'category')!.options =
-        Array.from(new Set(this.menuItems.map(m => m.category))).filter(Boolean);
+    // ⭐ Ensuring the component reacts to storeSlug changes in the URL
+    this.route.root.firstChild?.paramMap.subscribe(async params => {
+      this.storeSlug = params.get('storeSlug') || '';
+      
+      if (this.storeSlug) {
+        this.isLoadingState = true;
+        this.tableState = await this.loadTableState();
+        this.isLoadingState = false; 
+        this.loadMenuItems();
+      } else {
+        this.isLoadingState = false;
+      }
     });
   }
 
-  // 2. Added Delete Logic
+  private loadMenuItems() {
+    // Queries the specific store's sub-collection based on the current slug
+    const ref = collection(this.firestore, `Stores/${this.storeSlug}/menuItems`);
+    collectionData(ref, { idField: 'id' }).subscribe(data => {
+      this.menuItems = data;
+      const categoryFilter = this.filters.find(f => f.field === 'category');
+      if (categoryFilter) {
+        categoryFilter.options = Array.from(new Set(this.menuItems.map(m => m.category))).filter(Boolean);
+      }
+    });
+  }
+
   async handleDelete(items: any[]) {
     const message = items.length === 1 
       ? `Are you sure you want to delete "${items[0].name}"?` 

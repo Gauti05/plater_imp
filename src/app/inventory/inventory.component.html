@@ -1,11 +1,8 @@
 <div class="inventory-container">
   <div class="icon-nav">
-  <button class="nav-item"
-        routerLink="."
-        routerLinkActive="active"
-        [routerLinkActiveOptions]="{ exact: true }">
-  <span class="material-icons">dashboard</span><span>Dashboard</span>
-</button>
+    <button class="nav-item" routerLink="." routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
+      <span class="material-icons">dashboard</span><span>Dashboard</span>
+    </button>
     <button class="nav-item" routerLink="raw-materials" routerLinkActive="active">
       <span class="material-icons">inventory_2</span><span>Raw Materials</span>
     </button>
@@ -21,14 +18,68 @@
     <button class="nav-item" routerLink="purchase-orders" routerLinkActive="active">
       <span class="material-icons">shopping_cart</span><span>Purchases</span>
     </button>
-    <!-- <button class="nav-item" routerLink="stock-adjustments" routerLinkActive="active">
-      <span class="material-icons">edit</span><span>Adjustments</span>
-    </button>
-    <button class="nav-item" routerLink="reports" routerLinkActive="active">
-      <span class="material-icons">bar_chart</span><span>Reports</span>
-    </button> -->
   </div>
 
-  <!-- 🟢 Child routes will render here -->
+  @if (stores.length > 1) {
+    <div class="global-stock-section" style="margin-bottom: 24px;">
+      <button class="btn accent-btn" (click)="toggleGlobalSearch()" style="display: flex; align-items: center; gap: 8px;">
+        <span class="material-icons">travel_explore</span>
+        {{ showGlobalSearch ? 'Close Global Stock Finder' : 'Open Global Stock Finder' }}
+      </button>
+
+      @if (showGlobalSearch) {
+        <div class="card" style="margin-top: 16px;">
+          <div class="card-header">
+            <h4>Cross-Branch Stock Checker</h4>
+          </div>
+
+          @if (isLoadingGlobal) {
+            <p class="muted">Scanning authorized branch inventories...</p>
+          } @else {
+            <div style="display: flex; gap: 16px; align-items: center; margin-bottom: 16px;">
+              <select class="global-select" [(ngModel)]="selectedMaterial" (change)="onMaterialSelect()">
+                <option value="">Search or select raw material...</option>
+                @for (item of uniqueMaterialNames; track item) {
+                  <option [value]="item">{{ item }}</option>
+                }
+              </select>
+            </div>
+
+            @if (selectedMaterial) {
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Branch Location</th>
+                    <th>Current Stock</th>
+                    <th>Unit Cost</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (res of globalStockResults; track res.storeName) {
+                    <tr [class.low-stock-row]="res.stock > 0 && res.stock <= 5">
+                      <td><b>{{ res.storeName }}</b></td>
+                      <td>{{ res.stock }} {{ res.unit }}</td>
+                      <td>₹{{ res.costPerUnit }}</td>
+                      <td>
+                        @if (res.stock === 0) {
+                          <span class="warning-text" style="color: #ef4444;">Out of Stock</span>
+                        } @else if (res.stock <= 5) {
+                          <span class="warning-text">Low Stock</span>
+                        } @else {
+                          <span style="color: var(--accent); font-weight: 600;">Healthy</span>
+                        }
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            }
+          }
+        </div>
+      }
+    </div>
+  }
+
   <router-outlet></router-outlet>
 </div>

@@ -82,8 +82,6 @@
 //     return null;
 //   }
 // }
-
-
 import { Component, OnInit, ViewEncapsulation } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Firestore, collection, collectionData, query, where } from '@angular/fire/firestore';
@@ -116,7 +114,6 @@ export class UserListComponent implements OnInit {
   storeSlug = '';
   users: any[] = [];
   
-  // Pagination State
   filteredData: any[] = [];
   paginatedData: any[] = [];
   Math = Math;
@@ -156,8 +153,9 @@ export class UserListComponent implements OnInit {
     const storeId = this.storeContext.currentStoreId;
     if (!storeId) return;
 
-    // ⭐ FIXED: Fetching from the root 'users' collection
-    const usersRef = collection(this.firestore, `users`);
+    // ⭐ FIXED: Collection name changed to 'Users' (Capital U) to match AddUserComponent logic
+    // ⭐ Logic: We filter strictly by storeId so managers only see their own branch staff
+    const usersRef = collection(this.firestore, `Users`);
     const q = query(usersRef, where('storeId', '==', storeId));
 
     collectionData(q, { idField: 'id' }).subscribe({

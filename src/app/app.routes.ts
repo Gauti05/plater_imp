@@ -87,12 +87,11 @@
 
 
 
+import { Routes, CanActivateFn, Router } from '@angular/router';
+import { inject } from '@angular/core';
+import { Auth } from '@angular/fire/auth';
+import { Firestore, doc, getDoc } from '@angular/fire/firestore';
 
-
-
-
-
-import { Routes } from '@angular/router';
 import { authGuard, loginBlockGuard } from './core/auth.guard';
 import { LoginComponent } from './login/login.component';
 import { LayoutComponent } from './layout/layout.component';
@@ -118,8 +117,37 @@ import { AddComponent } from './crm/add/add.component';
 import { ViewComponent } from './crm/view/view.component';
 import { PayComponent } from './manage/pay/pay.component';
 import { MarketingComponent } from './marketing/marketing.component';
-// ⭐ Import the new component
 import { StoreSelectorComponent } from './store-selector/store-selector.component';
+
+// ⭐ Loyalty Settings Component Import
+import { LoyaltySettingsComponent } from './crm/loyalty-settings/loyalty-settings.component';
+
+// ⭐ Admin Guard allowing Owner (Admin) and Manager (Storeadmin)
+export const adminGuard: CanActivateFn = () => {
+  const auth = inject(Auth);
+  const firestore = inject(Firestore);
+  const router = inject(Router);
+
+  return new Promise<boolean>((resolve) => {
+    const unsubscribe = auth.onAuthStateChanged(async (user) => {
+      unsubscribe();
+      if (!user) {
+        router.navigate(['/login']);
+        resolve(false);
+        return;
+      }
+      const snap = await getDoc(doc(firestore, `Users/${user.uid}`));
+      const role = snap.data()?.['userRole'];
+      
+      if (role === 'Admin' || role === 'Storeadmin' || role === 'Superadmin') {
+        resolve(true);
+      } else {
+        alert('Access Denied: You do not have permission to view this page.');
+        resolve(false);
+      }
+    });
+  });
+};
 
 export const routes: Routes = [
   {
@@ -128,58 +156,59 @@ export const routes: Routes = [
     component: LoginComponent,
     data: { title: 'Login' }
   },
-
-  // ⭐ NEW: Store Selector Route (Post-Login / Pre-Dashboard)
   {
     path: 'outlets',
     canMatch: [authGuard],
     component: StoreSelectorComponent,
     data: { title: 'Select Outlet' }
   },
-
   {
     path: ':storeSlug',
     canMatch: [authGuard],
     component: LayoutComponent,
     children: [
       { path: 'dashboard', component: DashboardComponent, data: { title: 'Dashboard' } },
-      { path: 'users', component: UserListComponent, data: { title: 'Users' } },
-      { path: 'users/add', component: AddUserComponent, data: { title: 'Add User' } },
-      { path: 'users/edit/:id', component: AddUserComponent, data: { title: 'Edit User' } },
+      
+      { path: 'users', canActivate: [adminGuard], component: UserListComponent, data: { title: 'Users' } },
+      { path: 'users/add', canActivate: [adminGuard], component: AddUserComponent, data: { title: 'Add User' } },
+      { path: 'users/edit/:id', canActivate: [adminGuard], component: AddUserComponent, data: { title: 'Edit User' } },
+      { path: 'reports', canActivate: [adminGuard], component: ReportComponent, data: { title: 'Reports' } },
+      { path: 'customise', canActivate: [adminGuard], component: CustomisationComponent, data: { title: 'Customise' } },
+      { path: 'table', canActivate: [adminGuard], component: TableManagementComponent, data: { title: 'Table Management' } },
+      { path: 'marketing', canActivate: [adminGuard], component: MarketingComponent, data: { title: 'Marketing' } },
+      { path: 'discount', canActivate: [adminGuard], component: TableManagementComponent, data: { title: 'Discount' } },
+      { path: 'ai-studio', canActivate: [adminGuard], component: AiStudioComponent, data: { title: 'Ai Studio' } },
+      { path: 'pay', canActivate: [adminGuard], component: PayComponent, data: { title: 'Payroll' } },
+      {
+        path: 'inventory',
+        canActivate: [adminGuard],
+        loadChildren: () => import('./inventory/inventory.routes').then(m => m.INVENTORY_ROUTES)
+      },
+
       { path: 'orders', component: OrdersComponent, data: { title: 'Orders' } },
       { path: 'orders/add', component: AddOrderComponent, data: { title: 'Add Order' } },
       { path: 'orders/edit/:id', component: AddOrderComponent, data: { title: 'Edit Order' } },
-      { path: 'reports', component: ReportComponent, data: { title: 'Reports' } },
       { path: 'mailer', component: MailerComponent, data: { title: 'Mailer' } },
       { path: 'profile', component: ProfileComponent, data: { title: 'Profile' } },
-      { path: 'customise', component: CustomisationComponent, data: { title: 'Customise' } },
-      { path: 'table', component: TableManagementComponent, data: { title: 'Table Management' } },
-      { path: 'marketing', component: MarketingComponent, data: { title: 'Marketing' } },
-      { path: 'discount', component: TableManagementComponent, data: { title: 'Discount' } },
-      { path: 'ai-studio', component: AiStudioComponent, data: { title: 'Ai Studio' } },
+      
+      // CRM ROUTES
       { path: 'crm', component: CrmComponent, data: { title: 'CRM' } },
+      { path: 'crm/loyalty-settings', component: LoyaltySettingsComponent, data: { title: 'Loyalty Rules' } }, 
       { path: 'crm/add', component: AddComponent, data: { title: 'CRM' } },
       { path: 'crm/view/:id', component: ViewComponent, data: { title: 'CRM' } },
-      { path: 'pay', component: PayComponent, data: { title: 'Payroll' } },
-      {
-        path: 'inventory',
-        loadChildren: () => import('./inventory/inventory.routes').then(m => m.INVENTORY_ROUTES)
-      },
+      
       { path: '', pathMatch: 'full', redirectTo: 'dashboard' }
     ]
   },
-
   {
     path: ':storeSlug/pos',
     canMatch: [authGuard],
     component: PosComponent,
     data: { fullscreen: true, title: 'Point of Sale' }
   },
-
   {
     path: ':storeSlug/invoice-slip/:orderId',
     component: InvoiceSlipComponent
   },
-
   { path: '**', redirectTo: '/login' }
 ];

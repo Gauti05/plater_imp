@@ -116,3 +116,21 @@
   .kpi-row > *, .grid-section.large-section > *, .grid-section.side-section > * { grid-column: span 1; }
   .nav-item { padding: 8px 10px; font-size: 13px; }
 }
+
+/* ⭐ NEW: Global Stock Finder Select Style */
+.global-select {
+  width: 100%;
+  max-width: 320px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  background: var(--card-bg);
+  color: var(--text-main);
+  font-size: 14px;
+  outline: none;
+  transition: all 0.2s ease;
+}
+.global-select:focus {
+  border-color: var(--brand);
+  box-shadow: 0 0 0 3px rgba(37,99,235,0.15);
+}

@@ -1,3 +1,5 @@
+
+
 // import { Component, OnInit, ViewEncapsulation, signal, Inject, PLATFORM_ID } from '@angular/core';
 // import { Firestore, collection, getDocs, doc, getDoc, orderBy, query } from '@angular/fire/firestore';
 // import { CommonModule, DatePipe, NgClass, isPlatformBrowser } from '@angular/common';
@@ -201,7 +203,7 @@
 //   }
 
 //   private normalizeTimestamp(ts: any): Date | null { if (typeof ts?.toDate === 'function') return ts.toDate(); if (ts?.seconds) return new Date(ts.seconds * 1000); const d = new Date(ts); return isNaN(d.getTime()) ? null : d; }
-//   private num(v: any, fallback = 0) { const n = Number(v); return isNaN(n) ? fallback : n; }
+//   private num(n: any, fallback = 0) { const val = Number(n); return isNaN(val) ? fallback : val; }
 //   private deltaPct(now: number, prev: number) { if (!prev) return 0; return +(((now - prev) / prev) * 100).toFixed(1); }
 //   private toISO(d: Date) { return d.toISOString().slice(0,10); }
 //   onCurrencyChange() { this.curSymbol = this.currency === 'USD' ? '$' : '₹'; this.recompute(); }
@@ -225,39 +227,68 @@
 //     const nowInventory = this.sliceInventory(); 
 //     const nowSalesTotals = this.summarizeSales(nowSales.all); 
 //     const prevSalesTotals = this.summarizeSales(prevSales.all); 
-//     this.totalSales = nowSalesTotals.total; 
-//     this.totalOrders = nowSalesTotals.orders; 
-//     this.totalOnlineSales = nowSalesTotals.online; 
-//     this.totalOfflineSales = nowSalesTotals.offline; 
-//     this.totalSalesChange = this.deltaPct(this.totalSales, prevSalesTotals.total); 
-//     this.ordersChange = this.deltaPct(this.totalOrders, prevSalesTotals.orders); 
-//     this.onlineSalesChange = this.deltaPct(this.totalOnlineSales, prevSalesTotals.online); 
-//     this.offlineSalesChange = this.deltaPct(this.totalOfflineSales, prevSalesTotals.offline); 
     
-//     this.inventoryValue = 1146988; 
+//     // ⭐ BASELINE FALLBACK LOGIC FOR FIRST FOUR CARDS
+//     if (nowSalesTotals.total === 0) {
+//         this.totalSales = 1294; 
+//         this.totalOrders = 2;
+//         this.averageOrderValue = 647.00;
+//         this.profitMargin = 0.0;
+//         this.totalSalesChange = 0;
+//         this.ordersChange = 0;
+//         this.averageOrderValueChange = 0;
+//         this.profitMarginChange = 0;
+//     } else {
+//         this.totalSales = nowSalesTotals.total; 
+//         this.totalOrders = nowSalesTotals.orders; 
+//         this.averageOrderValue = this.totalOrders > 0 ? this.totalSales / this.totalOrders : 0; 
+//         this.profitMargin = nowSales.all.length > 0 ? nowSales.all.reduce((s,o)=>s+(o.profitMargin||0),0)/nowSales.all.length : 0;
+//         this.totalSalesChange = this.deltaPct(this.totalSales, prevSalesTotals.total); 
+//         this.ordersChange = this.deltaPct(this.totalOrders, prevSalesTotals.orders); 
+//         const prevAOV = prevSalesTotals.orders > 0 ? prevSalesTotals.total / prevSalesTotals.orders : 0;
+//         this.averageOrderValueChange = this.deltaPct(this.averageOrderValue, prevAOV);
+//         const prevProfit = prevSales.all.length > 0 ? prevSales.all.reduce((s,o)=>s+(o.profitMargin||0),0)/prevSales.all.length : 0;
+//         this.profitMarginChange = this.deltaPct(this.profitMargin, prevProfit);
+//     }
+
+//     // Smart fallback for Sales by Channel
+//     if (nowSalesTotals.online === 0 && nowSalesTotals.offline === 0) {
+//         this.totalOnlineSales = 4500; 
+//         this.totalOfflineSales = 5500; 
+//     } else {
+//         this.totalOnlineSales = nowSalesTotals.online;
+//         this.totalOfflineSales = nowSalesTotals.offline;
+//     }
     
-//     this.averageOrderValue = this.totalOrders > 0 ? this.totalSales / this.totalOrders : 0; 
+//     this.inventoryValue = nowInventory.inventoryValue || 1146988; 
     
 //     this.computeTopCategories(nowSales); 
+    
+//     // Smart fallback for Top Categories
+//     if(this.topCategories.length < 5) {
+//       const dummyItems = [
+//         {name: 'Beverages', revenue: 12000, percent: 75},
+//         {name: 'Main Course', revenue: 25000, percent: 95},
+//         {name: 'Snacks', revenue: 8500, percent: 55},
+//         {name: 'Desserts', revenue: 4200, percent: 30}
+//       ];
+//       dummyItems.forEach(item => {
+//           if (!this.topCategories.find(c => c.name === item.name)) {
+//               this.topCategories.push(item);
+//           }
+//       });
+//     }
     
 //     this.updateSalesVsOrdersChart(curBuckets, nowSales.bucketSales, nowSales.bucketOrders, compBuckets, prevSales.bucketSales, prevSales.bucketOrders); 
 //     this.updateKpiSparklines(curBuckets, nowSales); 
 //     this.updateInventoryDoughnut(nowInventory); 
-//     this.updateSalesDoughnut(nowSalesTotals); 
+//     this.updateSalesDoughnut({online: this.totalOnlineSales, offline: this.totalOfflineSales}); 
 //     this.computeRecentDailyLog(nowSales.all); 
 //   }
   
 //   private sliceSalesByBuckets(buckets: any[]) { const bucketSales = new Array(buckets.length).fill(0); const bucketOrders = new Array(buckets.length).fill(0); const all: Order[] = []; this.allSales.forEach(s => { const d = this.normalizeTimestamp(s.paidAt); if (!d) return; for (let i = 0; i < buckets.length; i++) { const b = buckets[i]; if (d >= b.start && d <= b.end) { all.push(s); bucketSales[i] += s.total; bucketOrders[i] += 1; break; } } }); return { all, bucketSales, bucketOrders }; }
 //   private sliceInventory() { let totalValue = 0; const stockBreakdown: Record<string, number> = {}; this.allInventory.forEach(item => { if (item.type === 'raw-material' && item.costPerUnit && item.stock != null) { const value = item.costPerUnit * item.stock; totalValue += value; stockBreakdown[item.category] = (stockBreakdown[item.category] || 0) + value; } }); return { inventoryValue: totalValue, stockBreakdown }; }
-  
-//   private summarizeSales(list: Order[]) { 
-//     const total = list.reduce((s, o) => s + o.total, 0); 
-//     const orders = list.length; 
-//     const online = list.filter(o => o.paymentMode !== 'CASH').reduce((s, o) => s + o.total, 0); 
-//     const offline = list.filter(o => o.paymentMode === 'CASH').reduce((s, o) => s + o.total, 0); 
-//     return { total, orders, online, offline }; 
-//   }
-  
+//   private summarizeSales(list: Order[]) { const total = list.reduce((s, o) => s + o.total, 0); const orders = list.length; const online = list.filter(o => o.paymentMode !== 'CASH').reduce((s, o) => s + o.total, 0); const offline = list.filter(o => o.paymentMode === 'CASH').reduce((s, o) => s + o.total, 0); return { total, orders, online, offline }; }
 //   private calculateOrderCost(order: Order, map: Map<string, InventoryItem>) { let cost = 0; order.items.forEach(i => { const m = map.get(i.id!); if (m?.recipe) m.recipe.forEach(r => { const rm = map.get(r.rawMaterialId); if (rm?.costPerUnit) cost += rm.costPerUnit * r.quantity * this.num(i.quantity); }); }); return cost; }
 //   private computeTopCategories(sales: {all: Order[]}) { const cat: Record<string, number> = {}; sales.all.forEach(s => s.items.forEach(i => cat[i.category] = (cat[i.category] || 0) + i.subtotal)); const arr = Object.keys(cat).map(name => ({name, revenue: cat[name]})); arr.sort((a,b) => b.revenue - a.revenue); const max = arr[0]?.revenue || 1; this.topCategories = arr.map(t => ({...t, percent: (t.revenue/max)*100})); }
 //   private computeRecentDailyLog(sales: Order[]) { const map: Record<string, any> = {}; sales.forEach(s => { const k = this.toISO(this.normalizeTimestamp(s.paidAt)!); if(!map[k]) map[k] = {date: this.normalizeTimestamp(s.paidAt), sales:0, orders:0}; map[k].sales += s.total; map[k].orders++; }); this.recentDailyLog = Object.values(map).sort((a,b) => b.date.getTime() - a.date.getTime()).slice(0, 10); }
@@ -267,36 +298,12 @@
 //       labels: cb.map(b => b.label), 
 //       datasets: [ 
 //         { 
-//           label: 'Revenue', 
-//           data: ns.map(s => this.fx(s)), 
-//           borderColor: '#4f46e5', 
-//           backgroundColor: (context: any) => {
-//             const chart = context.chart;
-//             const { ctx, chartArea } = chart;
-//             if (!chartArea) return 'rgba(79, 70, 229, 0.1)';
-//             const gradient = ctx.createLinearGradient(0, chartArea.top, 0, chartArea.bottom);
-//             gradient.addColorStop(0, 'rgba(79, 70, 229, 0.4)');
-//             gradient.addColorStop(1, 'rgba(79, 70, 229, 0.0)');
-//             return gradient;
-//           },
-//           fill: true, 
-//           yAxisID: 'y'
+//           label: 'Revenue Performance', data: ns.map(s => this.fx(s)), 
+//           borderColor: '#4f46e5', backgroundColor: 'rgba(79, 70, 229, 0.1)', fill: true, yAxisID: 'y'
 //         }, 
 //         { 
-//           label: 'Orders', 
-//           data: no, 
-//           borderColor: '#06b6d4', 
-//           backgroundColor: (context: any) => {
-//             const chart = context.chart;
-//             const { ctx, chartArea } = chart;
-//             if (!chartArea) return 'rgba(6, 182, 212, 0.1)';
-//             const gradient = ctx.createLinearGradient(0, chartArea.top, 0, chartArea.bottom);
-//             gradient.addColorStop(0, 'rgba(6, 182, 212, 0.4)');
-//             gradient.addColorStop(1, 'rgba(6, 182, 212, 0.0)');
-//             return gradient;
-//           },
-//           fill: true, 
-//           yAxisID: 'y1'
+//           label: 'Transaction Volume', data: no, 
+//           borderColor: '#0ea5e9', backgroundColor: 'rgba(14, 165, 233, 0.1)', fill: true, yAxisID: 'y1'
 //         } 
 //       ] 
 //     }; 
@@ -312,38 +319,23 @@
 //       gradient.addColorStop(1, colorEnd);
 //       return gradient;
 //     };
-
 //     this.kpiSparklines['sales'] = { labels: cb.map(b=>b.label), datasets: [{ data: ns.bucketSales.map((s: number) => this.fx(s)), borderColor: '#4f46e5', backgroundColor: (c) => createGradient(c, 'rgba(79,70,229,0.3)', 'rgba(79,70,229,0)'), fill: true }] }; 
-//     this.kpiSparklines['orders'] = { labels: cb.map(b=>b.label), datasets: [{ data: ns.bucketOrders, borderColor: '#06b6d4', backgroundColor: (c) => createGradient(c, 'rgba(6,182,212,0.3)', 'rgba(6,182,212,0)'), fill: true }] }; 
+//     this.kpiSparklines['orders'] = { labels: cb.map(b=>b.label), datasets: [{ data: ns.bucketOrders, borderColor: '#0ea5e9', backgroundColor: (c) => createGradient(c, 'rgba(14,165,233,0.3)', 'rgba(14,165,233,0)'), fill: true }] }; 
 //     this.kpiSparklines['aov'] = { labels: cb.map(b=>b.label), datasets: [{ data: ns.bucketSales.map((s: number, i: number) => ns.bucketOrders[i] ? s/ns.bucketOrders[i] : 0), borderColor: '#f59e0b', backgroundColor: (c) => createGradient(c, 'rgba(245,158,11,0.3)', 'rgba(245,158,11,0)'), fill: true }] }; 
 //     this.kpiSparklines['profitMargin'] = { labels: cb.map(b=>b.label), datasets: [{ data: ns.bucketSales.map(() => 20), borderColor: '#f43f5e', backgroundColor: (c) => createGradient(c, 'rgba(244,63,94,0.3)', 'rgba(244,63,94,0)'), fill: true }] }; 
 //   }
 
 //   private updateInventoryDoughnut(inv: any) { 
-//     const labels = [
-//       'Beverage', 'Housekeeping', 'Dry Grocery', 'Packaging', 'Herbs & Spices', 
-//       'Inhouse', 'Bakery', 'Dairy', 'Barista', 'Fruit & vegetables', 
-//       'outsourceed', 'Breads', 'Services', 'Meat Pro', 'Dessert'
-//     ];
-    
-//     const data = [15, 8, 12, 6, 18, 5, 4, 7, 5, 8, 3, 2, 4, 3, 3]; 
+//     let labels = Object.keys(inv.stockBreakdown);
+//     let data = Object.values(inv.stockBreakdown).map((v: any) => this.fx(v));
 
-//     const PIE_COLORS = [
-//       '#2563eb', '#10b981', '#f59e0b', '#8b5cf6', '#ef4444', 
-//       '#06b6d4', '#0284c7', '#22c55e', '#f97316', '#6366f1',
-//       '#f43f5e', '#38bdf8', '#0ea5e9', '#14b8a6', '#d946ef'
-//     ];
+//     if (labels.length === 0) {
+//       labels = ['Beverage', 'Housekeeping', 'Dry Grocery', 'Packaging', 'Herbs & Spices', 'Inhouse', 'Bakery', 'Dairy', 'Barista', 'Fruit & veg', 'Outsourced', 'Breads', 'Services', 'Meat Pro', 'Dessert'];
+//       data = [15, 8, 12, 6, 18, 5, 4, 7, 5, 8, 3, 2, 4, 3, 3]; 
+//     }
 
-//     this.inventoryDoughnutData = { 
-//       labels, 
-//       datasets: [{ 
-//         data, 
-//         backgroundColor: PIE_COLORS, 
-//         borderWidth: 1, 
-//         borderColor: '#ffffff',
-//         hoverOffset: 4
-//       }] 
-//     }; 
+//     const PIE_COLORS = ['#2563eb', '#10b981', '#f59e0b', '#8b5cf6', '#ef4444', '#06b6d4', '#0284c7', '#22c55e', '#f97316', '#6366f1', '#f43f5e', '#38bdf8', '#0ea5e9', '#14b8a6', '#d946ef'];
+//     this.inventoryDoughnutData = { labels, datasets: [{ data, backgroundColor: labels.map((_, i) => PIE_COLORS[i % PIE_COLORS.length]), borderWidth: 1, borderColor: '#ffffff', hoverOffset: 4 }] }; 
 //   }
 
 //   private updateSalesDoughnut(st: any) { 
@@ -351,9 +343,8 @@
 //       labels: ['Online Sales', 'Offline Sales'], 
 //       datasets: [{ 
 //         data: [this.fx(st.online), this.fx(st.offline)], 
-//         backgroundColor: ['#3b82f6', '#f97316'], // Bright Blue and Bright Orange
-//         borderWidth: 0, // Removes the white line glitch when a value is 0
-//         hoverOffset: 4
+//         backgroundColor: ['#4f46e5', '#f59e0b'], 
+//         borderWidth: 1, borderColor: '#ffffff', hoverOffset: 4
 //       }] 
 //     }; 
 //   }
@@ -369,14 +360,19 @@
 //   public inTempRange(d?: Date | null) { return false; }
 // }
 
+
+
+
+
 import { Component, OnInit, ViewEncapsulation, signal, Inject, PLATFORM_ID } from '@angular/core';
-import { Firestore, collection, getDocs, doc, getDoc, orderBy, query } from '@angular/fire/firestore';
+import { Firestore, collection, getDocs, doc, getDoc, orderBy, query, where, documentId } from '@angular/fire/firestore';
 import { CommonModule, DatePipe, NgClass, isPlatformBrowser } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import type { ChartData, ChartOptions, ChartDataset } from 'chart.js';
 import 'chart.js/auto';
 import { BaseChartDirective } from 'ng2-charts';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
+import { Auth, authState } from '@angular/fire/auth';
 
 /* ---------------------------- Firestore Types ---------------------------- */
 interface InventoryItem { 
@@ -414,7 +410,9 @@ export class DashboardComponent implements OnInit {
   public currency: 'INR'|'USD' = 'INR';
   public curSymbol = '₹';
   private FX: Record<'INR'|'USD', number> = { INR: 1, USD: 1 / 83.0 }; 
+  
   storeSlug = '';
+  storesList: { slug: string, name: string }[] = [];
 
   totalSales = 0; totalSalesChange = 0;
   totalOrders = 0; ordersChange = 0;
@@ -425,94 +423,28 @@ export class DashboardComponent implements OnInit {
   totalOnlineSales = 0; onlineSalesChange = 0;
   totalOfflineSales = 0; offlineSalesChange = 0;
   
-  /* -------------------------------- Charts Config -------------------------------- */
   public salesVsOrdersLineData: ChartData<'line'> = { labels: [], datasets: [] };
-  
   public salesVsOrdersLineOptions: ChartOptions<'line'> = {
-    responsive: true, 
-    maintainAspectRatio: false,
+    responsive: true, maintainAspectRatio: false,
     interaction: { mode: 'index', intersect: false },
     plugins: { 
-      legend: { 
-        display: true, 
-        position: 'top', 
-        align: 'end', 
-        labels: { usePointStyle: true, boxWidth: 8, font: { size: 13, family: 'Inter, sans-serif', weight: 500 }, color: '#6b7280', padding: 20 } 
-      },
-      tooltip: { 
-        backgroundColor: 'rgba(17, 24, 39, 0.95)', 
-        padding: 14, 
-        cornerRadius: 12, 
-        titleFont: { size: 14, family: 'Inter, sans-serif', weight: 'bold' }, 
-        bodyFont: { size: 13, family: 'Inter, sans-serif' }, 
-        boxPadding: 8, 
-        usePointStyle: true,
-        borderColor: 'rgba(255,255,255,0.1)',
-        borderWidth: 1
-      }
+      legend: { display: true, position: 'top', align: 'end', labels: { usePointStyle: true, boxWidth: 8, font: { size: 13 }, color: '#6b7280' } },
+      tooltip: { backgroundColor: 'rgba(17, 24, 39, 0.95)', padding: 14, cornerRadius: 12 }
     },
-    elements: { 
-      line: { tension: 0.45, borderWidth: 3, borderCapStyle: 'round', borderJoinStyle: 'round' }, 
-      point: { radius: 0, hitRadius: 20, hoverRadius: 6, hoverBorderWidth: 3, hoverBackgroundColor: '#fff' } 
-    },
-    scales: {
-      x: { 
-        grid: { display: false }, 
-        ticks: { color: '#9ca3af', font: { size: 11, family: 'Inter, sans-serif' }, padding: 10 }, 
-        border: { display: false } 
-      },
-      y: { 
-        border: { display: false }, 
-        grid: { color: 'rgba(156, 163, 175, 0.15)', drawTicks: false }, 
-        ticks: { color: '#9ca3af', maxTicksLimit: 6, padding: 15, font: { size: 11, family: 'Inter, sans-serif' } } 
-      },
-      y1: { display: false } 
-    }
+    elements: { line: { tension: 0.45 }, point: { radius: 0 } },
+    scales: { x: { grid: { display: false } }, y: { border: { display: false } }, y1: { display: false } }
   };
 
   public sparklineOptions: ChartOptions<'line'> = {
-    responsive: true, 
-    maintainAspectRatio: false,
+    responsive: true, maintainAspectRatio: false,
     plugins: { legend: { display: false }, tooltip: { enabled: false } },
-    elements: { 
-      line: { tension: 0.45, borderWidth: 2.5, borderCapStyle: 'round' }, 
-      point: { radius: 0, hitRadius: 0, hoverRadius: 0 } 
-    }, 
-    scales: { 
-      x: { display: false }, 
-      y: { display: false, min: 0 } 
-    },
-    layout: { padding: { top: 5, bottom: 2 } }
+    elements: { line: { tension: 0.45 }, point: { radius: 0 } }, 
+    scales: { x: { display: false }, y: { display: false, min: 0 } }
   };
 
   public doughnutOptions: ChartOptions<'doughnut'> = {
-    responsive: true, 
-    maintainAspectRatio: false,
-    cutout: '60%', 
-    plugins: { 
-      legend: { 
-        display: true, 
-        position: 'right', 
-        labels: {
-          usePointStyle: true,
-          pointStyle: 'rect', 
-          padding: 12,
-          font: { family: 'Inter, sans-serif', size: 12 },
-          color: '#4b5563'
-        }
-      },
-      tooltip: { 
-        backgroundColor: 'rgba(17, 24, 39, 0.95)', 
-        padding: 12, 
-        cornerRadius: 8, 
-        bodyFont: { family: 'Inter, sans-serif', size: 13 },
-        boxPadding: 6,
-        usePointStyle: true,
-        borderColor: 'rgba(255,255,255,0.1)',
-        borderWidth: 1
-      }
-    },
-    layout: { padding: 0 } 
+    responsive: true, maintainAspectRatio: false, cutout: '60%', 
+    plugins: { legend: { display: true, position: 'right' } }
   };
 
   public kpiSparklines: Record<string, ChartData<'line'>> = {};
@@ -529,45 +461,189 @@ export class DashboardComponent implements OnInit {
   public tempStartStr = '';
   public tempEndStr = '';
   public panelMonth = new Date();
-  public DOW = ['Su','Mo','Tu','We','Th','Fr','Sa'];
-  public leftMonthCells: { date: Date | null; inMonth: boolean }[] = [];
-  public rightMonthCells: { date: Date | null; inMonth: boolean }[] = [];
 
   constructor(
     private firestore: Firestore,
     private route: ActivatedRoute,
+    private router: Router, 
+    private fireAuth: Auth, 
     @Inject(PLATFORM_ID) private platformId: Object
   ) {}
 
-  async ngOnInit() {
-    this.storeSlug = this.route.snapshot.root.firstChild?.paramMap.get('storeSlug') || '';
+async ngOnInit() {
+    // ⭐ FIX: Subscribe to route changes instead of reading it once. 
+    // This allows the dashboard to change stores WITHOUT a browser reload!
+    this.route.paramMap.subscribe(params => {
+        const slugFromUrl = params.get('storeSlug') || this.route.parent?.snapshot.paramMap.get('storeSlug') || '';
+        
+        if (slugFromUrl) {
+            this.storeSlug = slugFromUrl;
+        }
+    });
+    
+    authState(this.fireAuth).subscribe(async (user) => {
+      if (user) {
+        try {
+          await this.loadStoresList(user.uid); 
+          this.applyPreset('30d');
+          await this.bootstrap();
+          if (this.hasData) this.recompute();
+        } catch (e) {
+          console.error('Dashboard init failed:', e);
+        } finally {
+          this.isLoading = false;
+        }
+      } else {
+        this.isLoading = false;
+      }
+    });
+  }
+
+
+  // async ngOnInit() {
+  //   this.storeSlug = this.route.snapshot.root.firstChild?.paramMap.get('storeSlug') || '';
+    
+  //   authState(this.fireAuth).subscribe(async (user) => {
+  //     if (user) {
+  //       try {
+  //         // ⭐ FIXED: Always load available outlets for the user
+  //         await this.loadStoresList(user.uid); 
+  //         this.applyPreset('30d');
+  //         await this.bootstrap();
+  //         if (this.hasData) this.recompute();
+  //       } catch (e) {
+  //         console.error('Dashboard init failed:', e);
+  //       } finally {
+  //         this.isLoading = false;
+  //       }
+  //     } else {
+  //       this.isLoading = false;
+  //     }
+  //   });
+  // }
+
+  private async loadStoresList(userId: string) {
+    const userDocRef = doc(this.firestore, `Users/${userId}`);
+    const userSnap = await getDoc(userDocRef);
+    
+    if (!userSnap.exists()) return;
+
+    const userData = userSnap.data();
+    const role = userData['userRole'];
+    const assignedStoreId = userData['storeId']; // Your primary store ID
+
+    const storesRef = collection(this.firestore, 'Stores');
+    let q;
+
+    if (role === 'Superadmin') {
+      q = query(storesRef); 
+    } else {
+      // ⭐ THE CORE FIX: Fetch stores matching your assigned ID OR stores where you are the ownerId
+      // This ensures 'black-coffee-cafe' AND newly created outlets appear in the dropdown.
+      q = query(storesRef, where('ownerId', '==', userId));
+    }
+
+    const snap = await getDocs(q);
+    
+    // Map existing results
+    const fetchedStores = snap.docs.map(d => ({
+      slug: d.data()['slug'] || d.id,
+      name: d.data()['name'] || d.data()['slug']
+    }));
+
+    // If the assigned store isn't in the ownerId list, we add it manually to ensure visibility
+    const assignedStoreExists = fetchedStores.some(s => s.slug === assignedStoreId);
+    if (!assignedStoreExists && assignedStoreId && role !== 'Superadmin') {
+        const assignedDoc = await getDoc(doc(this.firestore, `Stores/${assignedStoreId}`));
+        if (assignedDoc.exists()) {
+            fetchedStores.unshift({
+                slug: assignedDoc.data()['slug'] || assignedDoc.id,
+                name: assignedDoc.data()['name'] || assignedDoc.data()['slug']
+            });
+        }
+    }
+
+    this.storesList = fetchedStores;
+  }
+
+  // async onStoreChange() {
+  //   this.isLoading = true;
+  //   try {
+  //     if (this.storeSlug !== 'ALL') {
+  //       if (isPlatformBrowser(this.platformId)) {
+  //         // ⭐ Navigates to the selected store's dashboard URL
+  //         this.router.navigate(['/', this.storeSlug, 'dashboard']).then(() => {
+  //            window.location.reload(); 
+  //         });
+  //       }
+  //       return;
+  //     }
+  //     await this.bootstrap();
+  //     this.recompute();
+  //   } catch (e) {
+  //     console.error('Store change failed:', e);
+  //   } finally {
+  //     this.isLoading = false;
+  //   }
+  // }
+
+
+
+  async onStoreChange() {
+    this.isLoading = true;
     try {
-      this.applyPreset('30d');
+      if (this.storeSlug !== 'ALL') {
+        if (isPlatformBrowser(this.platformId)) {
+          // ⭐ THE LOOP KILLER: Navigate cleanly WITHOUT window.location.reload()
+          this.router.navigate(['/', this.storeSlug, 'dashboard']).then(() => {
+             // We re-bootstrap the data directly instead of reloading the whole browser
+             this.bootstrap().then(() => {
+                 if (this.hasData) this.recompute();
+                 this.isLoading = false;
+             });
+          });
+        }
+        return;
+      }
+      
+      // Logic for 'ALL'
       await this.bootstrap();
-      if (this.hasData) this.recompute();
+      this.recompute();
     } catch (e) {
-      console.error('Dashboard init failed:', e);
+      console.error('Store change failed:', e);
     } finally {
       this.isLoading = false;
     }
   }
 
   private async bootstrap() {
-    const ordersPath = this.storeSlug ? `Stores/${this.storeSlug}/orders` : 'orders';
-    const inventoryPath = this.storeSlug ? `Stores/${this.storeSlug}/rawMaterials` : 'rawMaterials';
-    const [salesSnap, inventorySnap] = await Promise.all([
-      getDocs(query(collection(this.firestore, ordersPath), orderBy('paidAt', 'desc'))),
-      getDocs(query(collection(this.firestore, inventoryPath))),
-    ]);
-    this.allInventory = inventorySnap.docs.map(d => ({ id: d.id, ...d.data() as any as InventoryItem }));
-    const allInventoryMap = new Map(this.allInventory.map(i => [i.id!, i]));
-    this.allSales = salesSnap.docs.map(d => ({ id: d.id, ...d.data() as any as Order }))
-      .filter(o => o.status === 'Paid')
-      .map(order => {
-        const orderCost = this.calculateOrderCost(order, allInventoryMap);
-        const profit = order.total - orderCost;
-        return { ...order, totalCost: orderCost, profitMargin: order.total > 0 ? (profit / order.total) * 100 : 0 };
+    this.allSales = []; this.allInventory = [];
+    if (this.storeSlug === 'ALL') {
+      const orderPromises = this.storesList.map(s => getDocs(query(collection(this.firestore, `Stores/${s.slug}/orders`), orderBy('paidAt', 'desc'))));
+      const invPromises = this.storesList.map(s => getDocs(query(collection(this.firestore, `Stores/${s.slug}/rawMaterials`))));
+      const ordersSnaps = await Promise.all(orderPromises);
+      const invSnaps = await Promise.all(invPromises);
+      invSnaps.forEach(snap => { this.allInventory.push(...snap.docs.map(d => ({ id: d.id, ...d.data() as any as InventoryItem }))); });
+      const allInventoryMap = new Map(this.allInventory.map(i => [i.id!, i]));
+      ordersSnaps.forEach(snap => {
+        const storeSales = snap.docs.map(d => ({ id: d.id, ...d.data() as any as Order })).filter(o => o.status === 'Paid').map(order => {
+            const orderCost = this.calculateOrderCost(order, allInventoryMap);
+            return { ...order, totalCost: orderCost, profitMargin: order.total > 0 ? ((order.total - orderCost) / order.total) * 100 : 0 };
+          });
+        this.allSales.push(...storeSales);
       });
+      this.allSales.sort((a,b) => (this.normalizeTimestamp(b.paidAt)?.getTime() || 0) - (this.normalizeTimestamp(a.paidAt)?.getTime() || 0));
+    } else {
+      const ordersPath = this.storeSlug ? `Stores/${this.storeSlug}/orders` : 'orders';
+      const inventoryPath = this.storeSlug ? `Stores/${this.storeSlug}/rawMaterials` : 'rawMaterials';
+      const [salesSnap, inventorySnap] = await Promise.all([ getDocs(query(collection(this.firestore, ordersPath), orderBy('paidAt', 'desc'))), getDocs(query(collection(this.firestore, inventoryPath))) ]);
+      this.allInventory = inventorySnap.docs.map(d => ({ id: d.id, ...d.data() as any as InventoryItem }));
+      const allInventoryMap = new Map(this.allInventory.map(i => [i.id!, i]));
+      this.allSales = salesSnap.docs.map(d => ({ id: d.id, ...d.data() as any as Order })).filter(o => o.status === 'Paid').map(order => {
+          const orderCost = this.calculateOrderCost(order, allInventoryMap);
+          return { ...order, totalCost: orderCost, profitMargin: order.total > 0 ? ((order.total - orderCost) / order.total) * 100 : 0 };
+        });
+    }
     this.hasData = !!(this.allSales.length || this.allInventory.length);
   }
 
@@ -578,80 +654,22 @@ export class DashboardComponent implements OnInit {
   onCurrencyChange() { this.curSymbol = this.currency === 'USD' ? '$' : '₹'; this.recompute(); }
   fx(value: number) { return (value || 0) * this.FX[this.currency]; }
   public setInterval(iv: 'day'|'week'|'month') { this.interval.set(iv); this.intervalStr = iv; this.recompute(); }
-
-  private startOfISOWeek(d: Date) { const nd = new Date(d); const day = (nd.getDay() + 6) % 7; nd.setDate(nd.getDate() - day); nd.setHours(0,0,0,0); return nd; }
-  private buildDateArray(startISO: string, endISO: string): string[] { const out: string[] = []; const s = new Date(startISO); const e = new Date(endISO); e.setHours(23,59,59,999); const d = new Date(s); while (d <= e) { out.push(d.toISOString().slice(0,10)); d.setDate(d.getDate()+1); } return out; }
-  private comparisonWindow(currentStartISO: string, currentEndISO: string, mode: 'prevPeriod'|'prevYear') { const curDates = this.buildDateArray(currentStartISO, currentEndISO); const len = curDates.length; if (mode === 'prevPeriod') { const s = new Date(currentStartISO); s.setDate(s.getDate() - len); const e = new Date(currentStartISO); e.setDate(e.getDate() - 1); return { dates: this.buildDateArray(this.toISO(s), this.toISO(e)) }; } else { const s = new Date(currentStartISO); s.setFullYear(s.getFullYear()-1); const e = new Date(currentEndISO); e.setFullYear(e.getFullYear()-1); const candidate = this.buildDateArray(this.toISO(s), this.toISO(e)); if (candidate.length === len) return { dates: candidate }; if (candidate.length > len) return { dates: candidate.slice(-len) }; const pad: string[] = []; const last = new Date(candidate[candidate.length-1] || s); for (let i=candidate.length; i<len; i++) { last.setDate(last.getDate()+1); pad.push(this.toISO(last)); } return { dates: [...candidate, ...pad] }; } }
-  private buildBuckets(startISO: string, endISO: string, interval: 'day'|'week'|'month') { const buckets: { key: string; label: string; start: Date; end: Date }[] = []; const rangeStart = new Date(startISO); rangeStart.setHours(0,0,0,0); const rangeEnd = new Date(endISO); rangeEnd.setHours(23,59,59,999); let cur = new Date(rangeStart); if (interval === 'day') { while (cur <= rangeEnd) { const s = new Date(cur); s.setHours(0,0,0,0); const e = new Date(cur); e.setHours(23,59,59,999); buckets.push({ key: this.toISO(s), label: this.toISO(s), start: s, end: e }); cur.setDate(cur.getDate() + 1); } } else if (interval === 'week') { let ws = this.startOfISOWeek(rangeStart); while (ws <= rangeEnd) { const we = new Date(ws); we.setDate(we.getDate()+6); we.setHours(23,59,59,999); const s = new Date(Math.max(ws.getTime(), rangeStart.getTime())); const e = new Date(Math.min(we.getTime(), rangeEnd.getTime())); if (s <= e) { const year = ws.getFullYear(); buckets.push({ key: `${year}-W`, label: `W`, start: s, end: e }); } ws.setDate(ws.getDate()+7); } } else { let ms = new Date(rangeStart.getFullYear(), rangeStart.getMonth(), 1); while (ms <= rangeEnd) { const me = new Date(ms.getFullYear(), ms.getMonth()+1, 0, 23,59,59,999); const s = new Date(Math.max(ms.getTime(), rangeStart.getTime())); const e = new Date(Math.min(me.getTime(), rangeEnd.getTime())); if (s <= e) { buckets.push({ key: `${ms.getMonth()}`, label: ms.toLocaleDateString(), start: s, end: e }); } ms.setMonth(ms.getMonth()+1); } } return buckets; }
-  
-  public applyPreset(preset: 'today'|'yesterday'|'7d'|'30d'|'90d'|'365d'|'lastWeek'|'lastMonth'|'custom') { this.rangePreset.set(preset); const now = new Date(); const toISO = (d: Date) => d.toISOString().slice(0, 10); let s = new Date(now), e = new Date(now); if (preset === '30d') { s.setDate(s.getDate()-29); } else if (preset === '7d') { s.setDate(s.getDate()-6); } else if (preset === 'yesterday') { s.setDate(s.getDate()-1); e.setDate(e.getDate()-1); } this.startDate.set(toISO(s)); this.endDate.set(toISO(e)); if (this.hasData) this.recompute(); }
+  public applyPreset(preset: any) { const now = new Date(); let s = new Date(now), e = new Date(now); if (preset === '30d') s.setDate(s.getDate()-29); else if (preset === '7d') s.setDate(s.getDate()-6); this.startDate.set(this.toISO(s)); this.endDate.set(this.toISO(e)); if (this.hasData) this.recompute(); }
   
   public recompute() { 
     const iv = this.interval(); 
     const curBuckets = this.buildBuckets(this.startDate(), this.endDate(), iv); 
-    const compDates = this.comparisonWindow(this.startDate(), this.endDate(), this.compareMode).dates; 
-    const compBuckets = this.buildBuckets(compDates[0], compDates[compDates.length - 1], iv); 
     const nowSales = this.sliceSalesByBuckets(curBuckets); 
-    const prevSales = this.sliceSalesByBuckets(compBuckets); 
     const nowInventory = this.sliceInventory(); 
     const nowSalesTotals = this.summarizeSales(nowSales.all); 
-    const prevSalesTotals = this.summarizeSales(prevSales.all); 
-    
-    // ⭐ BASELINE FALLBACK LOGIC FOR FIRST FOUR CARDS
-    if (nowSalesTotals.total === 0) {
-        this.totalSales = 1294; 
-        this.totalOrders = 2;
-        this.averageOrderValue = 647.00;
-        this.profitMargin = 0.0;
-        this.totalSalesChange = 0;
-        this.ordersChange = 0;
-        this.averageOrderValueChange = 0;
-        this.profitMarginChange = 0;
-    } else {
-        this.totalSales = nowSalesTotals.total; 
-        this.totalOrders = nowSalesTotals.orders; 
-        this.averageOrderValue = this.totalOrders > 0 ? this.totalSales / this.totalOrders : 0; 
-        this.profitMargin = nowSales.all.length > 0 ? nowSales.all.reduce((s,o)=>s+(o.profitMargin||0),0)/nowSales.all.length : 0;
-        this.totalSalesChange = this.deltaPct(this.totalSales, prevSalesTotals.total); 
-        this.ordersChange = this.deltaPct(this.totalOrders, prevSalesTotals.orders); 
-        const prevAOV = prevSalesTotals.orders > 0 ? prevSalesTotals.total / prevSalesTotals.orders : 0;
-        this.averageOrderValueChange = this.deltaPct(this.averageOrderValue, prevAOV);
-        const prevProfit = prevSales.all.length > 0 ? prevSales.all.reduce((s,o)=>s+(o.profitMargin||0),0)/prevSales.all.length : 0;
-        this.profitMarginChange = this.deltaPct(this.profitMargin, prevProfit);
-    }
-
-    // Smart fallback for Sales by Channel
-    if (nowSalesTotals.online === 0 && nowSalesTotals.offline === 0) {
-        this.totalOnlineSales = 4500; 
-        this.totalOfflineSales = 5500; 
-    } else {
-        this.totalOnlineSales = nowSalesTotals.online;
-        this.totalOfflineSales = nowSalesTotals.offline;
-    }
-    
-    this.inventoryValue = nowInventory.inventoryValue || 1146988; 
-    
-    this.computeTopCategories(nowSales); 
-    
-    // Smart fallback for Top Categories
-    if(this.topCategories.length < 5) {
-      const dummyItems = [
-        {name: 'Beverages', revenue: 12000, percent: 75},
-        {name: 'Main Course', revenue: 25000, percent: 95},
-        {name: 'Snacks', revenue: 8500, percent: 55},
-        {name: 'Desserts', revenue: 4200, percent: 30}
-      ];
-      dummyItems.forEach(item => {
-          if (!this.topCategories.find(c => c.name === item.name)) {
-              this.topCategories.push(item);
-          }
-      });
-    }
-    
-    this.updateSalesVsOrdersChart(curBuckets, nowSales.bucketSales, nowSales.bucketOrders, compBuckets, prevSales.bucketSales, prevSales.bucketOrders); 
+    this.totalSales = nowSalesTotals.total; this.totalOrders = nowSalesTotals.orders; 
+    this.averageOrderValue = this.totalOrders > 0 ? this.totalSales / this.totalOrders : 0; 
+    this.profitMargin = nowSales.all.length > 0 ? nowSales.all.reduce((s,o)=>s+(o.profitMargin||0),0)/nowSales.all.length : 0;
+    this.inventoryValue = nowInventory.inventoryValue || 0; 
+    this.updateSalesVsOrdersChart(curBuckets, nowSales.bucketSales, nowSales.bucketOrders, [], [], []); 
     this.updateKpiSparklines(curBuckets, nowSales); 
     this.updateInventoryDoughnut(nowInventory); 
-    this.updateSalesDoughnut({online: this.totalOnlineSales, offline: this.totalOfflineSales}); 
+    this.updateSalesDoughnut({online: nowSalesTotals.online, offline: nowSalesTotals.offline}); 
     this.computeRecentDailyLog(nowSales.all); 
   }
   
@@ -659,72 +677,16 @@ export class DashboardComponent implements OnInit {
   private sliceInventory() { let totalValue = 0; const stockBreakdown: Record<string, number> = {}; this.allInventory.forEach(item => { if (item.type === 'raw-material' && item.costPerUnit && item.stock != null) { const value = item.costPerUnit * item.stock; totalValue += value; stockBreakdown[item.category] = (stockBreakdown[item.category] || 0) + value; } }); return { inventoryValue: totalValue, stockBreakdown }; }
   private summarizeSales(list: Order[]) { const total = list.reduce((s, o) => s + o.total, 0); const orders = list.length; const online = list.filter(o => o.paymentMode !== 'CASH').reduce((s, o) => s + o.total, 0); const offline = list.filter(o => o.paymentMode === 'CASH').reduce((s, o) => s + o.total, 0); return { total, orders, online, offline }; }
   private calculateOrderCost(order: Order, map: Map<string, InventoryItem>) { let cost = 0; order.items.forEach(i => { const m = map.get(i.id!); if (m?.recipe) m.recipe.forEach(r => { const rm = map.get(r.rawMaterialId); if (rm?.costPerUnit) cost += rm.costPerUnit * r.quantity * this.num(i.quantity); }); }); return cost; }
-  private computeTopCategories(sales: {all: Order[]}) { const cat: Record<string, number> = {}; sales.all.forEach(s => s.items.forEach(i => cat[i.category] = (cat[i.category] || 0) + i.subtotal)); const arr = Object.keys(cat).map(name => ({name, revenue: cat[name]})); arr.sort((a,b) => b.revenue - a.revenue); const max = arr[0]?.revenue || 1; this.topCategories = arr.map(t => ({...t, percent: (t.revenue/max)*100})); }
   private computeRecentDailyLog(sales: Order[]) { const map: Record<string, any> = {}; sales.forEach(s => { const k = this.toISO(this.normalizeTimestamp(s.paidAt)!); if(!map[k]) map[k] = {date: this.normalizeTimestamp(s.paidAt), sales:0, orders:0}; map[k].sales += s.total; map[k].orders++; }); this.recentDailyLog = Object.values(map).sort((a,b) => b.date.getTime() - a.date.getTime()).slice(0, 10); }
+  private buildBuckets(startISO: string, endISO: string, interval: string) { const buckets: any[] = []; let cur = new Date(startISO); const end = new Date(endISO); end.setHours(23,59,59); while (cur <= end) { const s = new Date(cur); const e = new Date(cur); e.setHours(23,59,59); buckets.push({ label: this.toISO(s), start: s, end: e }); cur.setDate(cur.getDate()+1); } return buckets; }
 
-  private updateSalesVsOrdersChart(cb: any[], ns: number[], no: number[], cob: any[], ps: number[], po: number[]) { 
-    this.salesVsOrdersLineData = { 
-      labels: cb.map(b => b.label), 
-      datasets: [ 
-        { 
-          label: 'Revenue Performance', data: ns.map(s => this.fx(s)), 
-          borderColor: '#4f46e5', backgroundColor: 'rgba(79, 70, 229, 0.1)', fill: true, yAxisID: 'y'
-        }, 
-        { 
-          label: 'Transaction Volume', data: no, 
-          borderColor: '#0ea5e9', backgroundColor: 'rgba(14, 165, 233, 0.1)', fill: true, yAxisID: 'y1'
-        } 
-      ] 
-    }; 
-  }
-  
-  private updateKpiSparklines(cb: any[], ns: any) { 
-    const createGradient = (context: any, colorStart: string, colorEnd: string) => {
-      const chart = context.chart;
-      const { ctx, chartArea } = chart;
-      if (!chartArea) return colorEnd;
-      const gradient = ctx.createLinearGradient(0, chartArea.top, 0, chartArea.bottom);
-      gradient.addColorStop(0, colorStart);
-      gradient.addColorStop(1, colorEnd);
-      return gradient;
-    };
-    this.kpiSparklines['sales'] = { labels: cb.map(b=>b.label), datasets: [{ data: ns.bucketSales.map((s: number) => this.fx(s)), borderColor: '#4f46e5', backgroundColor: (c) => createGradient(c, 'rgba(79,70,229,0.3)', 'rgba(79,70,229,0)'), fill: true }] }; 
-    this.kpiSparklines['orders'] = { labels: cb.map(b=>b.label), datasets: [{ data: ns.bucketOrders, borderColor: '#0ea5e9', backgroundColor: (c) => createGradient(c, 'rgba(14,165,233,0.3)', 'rgba(14,165,233,0)'), fill: true }] }; 
-    this.kpiSparklines['aov'] = { labels: cb.map(b=>b.label), datasets: [{ data: ns.bucketSales.map((s: number, i: number) => ns.bucketOrders[i] ? s/ns.bucketOrders[i] : 0), borderColor: '#f59e0b', backgroundColor: (c) => createGradient(c, 'rgba(245,158,11,0.3)', 'rgba(245,158,11,0)'), fill: true }] }; 
-    this.kpiSparklines['profitMargin'] = { labels: cb.map(b=>b.label), datasets: [{ data: ns.bucketSales.map(() => 20), borderColor: '#f43f5e', backgroundColor: (c) => createGradient(c, 'rgba(244,63,94,0.3)', 'rgba(244,63,94,0)'), fill: true }] }; 
-  }
+  private updateSalesVsOrdersChart(cb: any[], ns: number[], no: number[], cob: any[], ps: number[], po: number[]) { this.salesVsOrdersLineData = { labels: cb.map(b => b.label), datasets: [ { label: 'Revenue', data: ns.map(s => this.fx(s)), borderColor: '#4f46e5', fill: true, yAxisID: 'y' }, { label: 'Orders', data: no, borderColor: '#0ea5e9', fill: true, yAxisID: 'y1' } ] }; }
+  private updateKpiSparklines(cb: any[], ns: any) { this.kpiSparklines['sales'] = { labels: cb.map(b=>b.label), datasets: [{ data: ns.bucketSales.map((s: any) => this.fx(s)), borderColor: '#4f46e5', fill: true }] }; this.kpiSparklines['orders'] = { labels: cb.map(b=>b.label), datasets: [{ data: ns.bucketOrders, borderColor: '#0ea5e9', fill: true }] }; }
+  private updateInventoryDoughnut(inv: any) { this.inventoryDoughnutData = { labels: Object.keys(inv.stockBreakdown), datasets: [{ data: Object.values(inv.stockBreakdown).map((v: any) => this.fx(v)), backgroundColor: ['#2563eb', '#10b981', '#f59e0b'] }] }; }
+  private updateSalesDoughnut(st: any) { this.salesDoughnutData = { labels: ['Online', 'Offline'], datasets: [{ data: [this.fx(st.online), this.fx(st.offline)], backgroundColor: ['#4f46e5', '#f59e0b'] }] }; }
 
-  private updateInventoryDoughnut(inv: any) { 
-    let labels = Object.keys(inv.stockBreakdown);
-    let data = Object.values(inv.stockBreakdown).map((v: any) => this.fx(v));
-
-    if (labels.length === 0) {
-      labels = ['Beverage', 'Housekeeping', 'Dry Grocery', 'Packaging', 'Herbs & Spices', 'Inhouse', 'Bakery', 'Dairy', 'Barista', 'Fruit & veg', 'Outsourced', 'Breads', 'Services', 'Meat Pro', 'Dessert'];
-      data = [15, 8, 12, 6, 18, 5, 4, 7, 5, 8, 3, 2, 4, 3, 3]; 
-    }
-
-    const PIE_COLORS = ['#2563eb', '#10b981', '#f59e0b', '#8b5cf6', '#ef4444', '#06b6d4', '#0284c7', '#22c55e', '#f97316', '#6366f1', '#f43f5e', '#38bdf8', '#0ea5e9', '#14b8a6', '#d946ef'];
-    this.inventoryDoughnutData = { labels, datasets: [{ data, backgroundColor: labels.map((_, i) => PIE_COLORS[i % PIE_COLORS.length]), borderWidth: 1, borderColor: '#ffffff', hoverOffset: 4 }] }; 
-  }
-
-  private updateSalesDoughnut(st: any) { 
-    this.salesDoughnutData = { 
-      labels: ['Online Sales', 'Offline Sales'], 
-      datasets: [{ 
-        data: [this.fx(st.online), this.fx(st.offline)], 
-        backgroundColor: ['#4f46e5', '#f59e0b'], 
-        borderWidth: 1, borderColor: '#ffffff', hoverOffset: 4
-      }] 
-    }; 
-  }
-
-  public toggleDatePicker() { this.dateRangeOpen = !this.dateRangeOpen; if (this.dateRangeOpen) { this.tempStartStr = this.startDate(); this.tempEndStr = this.endDate(); this.panelMonth = new Date(); this.buildCalendars(); } }
-  public cancelDatePicker() { this.dateRangeOpen = false; }
-  public applyDatePicker() { this.startDate.set(this.tempStartStr); this.endDate.set(this.tempEndStr); this.recompute(); this.dateRangeOpen = false; }
+  public toggleDatePicker() { this.dateRangeOpen = !this.dateRangeOpen; }
+  public applyDatePicker() { this.recompute(); this.dateRangeOpen = false; }
   public applyPresetAndPreview(code: any) { this.applyPreset(code); this.dateRangeOpen = false; }
-  public shiftPanelMonth(d: number) { this.panelMonth.setMonth(this.panelMonth.getMonth() + d); this.buildCalendars(); }
-  private buildCalendars() { }
-  public pickTempDate(d: Date) { this.tempStartStr = this.toISO(d); this.tempEndStr = this.toISO(d); }
-  public isSelected(d?: Date | null) { return false; }
-  public inTempRange(d?: Date | null) { return false; }
+  public cancelDatePicker() { this.dateRangeOpen = false; }
 }

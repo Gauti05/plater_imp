@@ -211,7 +211,6 @@
   </form>
 </div> -->
 
-
 <div class="add-user-wrap">
   <form #userForm="ngForm" (ngSubmit)="onSubmit(userForm)" class="user-form" novalidate>
     
@@ -256,6 +255,15 @@
             <div class="field-wrap">
               <label>Designation</label>
               <input name="designation" [(ngModel)]="user().designation" required class="premium-input" placeholder="e.g. Senior Associate" />
+            </div>
+
+            <div class="field-wrap full">
+              <label>System Access Level (Primary Role)</label>
+              <select name="userRole" [(ngModel)]="user().userRole" required class="premium-input">
+                <option value="Staff">Staff (Cashier / Waiter)</option>
+                <option value="Storeadmin">Store Admin (Branch Manager)</option>
+              </select>
+              <span class="help-txt">Determines what pages this user can access in the software.</span>
             </div>
 
             @if (!isEditMode()) {

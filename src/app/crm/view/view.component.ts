@@ -18,7 +18,8 @@ import {
   Timestamp,
   getDocs,
   updateDoc,
-  deleteDoc
+  deleteDoc,
+  orderBy
 } from '@angular/fire/firestore';
 import { CommonModule, formatDate } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -46,6 +47,7 @@ export class ViewComponent implements OnInit, AfterViewInit, OnDestroy {
   reminders: any[] = [];
   emailLogs: any[] = [];
   orders: any[] = [];
+  walletTransactions: any[] = []; // ⭐ Added for Wallet Ledger
 
   // Lead owner (assignee) — LEAD-LEVEL ONLY
   teamUsers: Array<{id:string; name:string; email?:string; role?:string; active?:boolean}> = [];
@@ -161,7 +163,6 @@ export class ViewComponent implements OnInit, AfterViewInit, OnDestroy {
   constructor(
     private route: ActivatedRoute,
     private firestore: Firestore,
-   
     private zone: NgZone
   ) {}
 
@@ -170,7 +171,7 @@ export class ViewComponent implements OnInit, AfterViewInit, OnDestroy {
       const customerId = this.route.snapshot.paramMap.get('id') ?? '';
 
     this.customerId = customerId;
-    this.loadTeam();        // load users for lead assignment
+    this.loadTeam(); 
     this.loadCustomerData();
   }
 
@@ -191,6 +192,18 @@ export class ViewComponent implements OnInit, AfterViewInit, OnDestroy {
   ngOnDestroy(): void {
     if (this.calendarInstance) this.calendarInstance.destroy();
     if (this.ro) this.ro.disconnect();
+  }
+
+  // ⭐ NEW: Fetch Points Transaction History
+  async loadWalletTransactions() {
+    try {
+      const walletRef = collection(this.firestore, `Stores/${this.storeId}/customers/${this.customerId}/pointsTransactions`);
+      const q = query(walletRef, orderBy('createdAt', 'desc'));
+      const snap = await getDocs(q);
+      this.walletTransactions = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    } catch (e) {
+      console.error("Error loading wallet transactions", e);
+    }
   }
   
   // ===== Assign / Team (Lead-level only) =====
@@ -223,26 +236,24 @@ export class ViewComponent implements OnInit, AfterViewInit, OnDestroy {
       assignedToName: name,
       assignedAt: new Date()
     };
-    const ref = doc(this.firestore, `stores/${this.storeId}/customers/${this.customerId}`);
+    const ref = doc(this.firestore, `Stores/${this.storeId}/customers/${this.customerId}`);
     await updateDoc(ref, payload);
     this.assignedToUserId = payload.assignedToUserId;
     this.assignedToName = payload.assignedToName;
     this.assignedAt = payload.assignedAt;
-    // this.toast.show('Lead assigned', 'success');
 
     try {
-      const notesRef = collection(this.firestore, `stores/${this.storeId}/customers/${this.customerId}/notes`);
+      const notesRef = collection(this.firestore, `Stores/${this.storeId}/customers/${this.customerId}/notes`);
       await addDoc(notesRef, { text: `Lead assigned to ${name}`, createdAt: new Date(), type: 'System' });
     } catch {}
   }
 
   async unassignLead() {
-    const ref = doc(this.firestore, `stores/${this.storeId}/customers/${this.customerId}`);
+    const ref = doc(this.firestore, `Stores/${this.storeId}/customers/${this.customerId}`);
     await updateDoc(ref, { assignedToUserId: '', assignedToName: '', assignedAt: null });
     this.assignedToUserId = '';
     this.assignedToName = '';
     this.assignedAt = null;
-    // this.toast.show('Lead unassigned', 'success');
   }
 
   // ===== Data load =====
@@ -250,7 +261,7 @@ export class ViewComponent implements OnInit, AfterViewInit, OnDestroy {
     this.loading = true;
 
     try {
-      const customerRef = doc(this.firestore, `stores/${this.storeId}/customers/${this.customerId}`);
+      const customerRef = doc(this.firestore, `Stores/${this.storeId}/customers/${this.customerId}`);
       const snap = await getDoc(customerRef);
       this.customer = snap.exists() ? snap.data() : null;
 
@@ -261,30 +272,30 @@ export class ViewComponent implements OnInit, AfterViewInit, OnDestroy {
 
       this.pipelineStage = (this.customer?.pipelineStage as any) || this.pipelineStage;
 
-      const orderRef = collection(this.firestore, `stores/${this.storeId}/orders`);
-      const qy = query(orderRef, where('email', '==', this.customer?.email || ''));
+      const orderRef = collection(this.firestore, `Stores/${this.storeId}/orders`);
+      const qy = query(orderRef, where('customerMobile', '==', this.customerId)); // Fixed: using customerMobile to link orders
       const orderSnap = await getDocs(qy);
       this.orders = orderSnap.docs.map(d => ({ id: d.id, ...d.data() }));
 
-      const notesRef = collection(this.firestore, `stores/${this.storeId}/customers/${this.customerId}/notes`);
+      const notesRef = collection(this.firestore, `Stores/${this.storeId}/customers/${this.customerId}/notes`);
       const notesSnap = await getDocs(notesRef);
       this.notes = notesSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
-      const remindersRef = collection(this.firestore, `stores/${this.storeId}/customers/${this.customerId}/reminders`);
+      const remindersRef = collection(this.firestore, `Stores/${this.storeId}/customers/${this.customerId}/reminders`);
       const remindersSnap = await getDocs(remindersRef);
       this.reminders = remindersSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
-      const emailsRef = collection(this.firestore, `stores/${this.storeId}/customers/${this.customerId}/emails`);
+      const emailsRef = collection(this.firestore, `Stores/${this.storeId}/customers/${this.customerId}/emails`);
       const emailSnap = await getDocs(emailsRef);
       this.emailLogs = emailSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       
-      // 🔑 1. Load Manual Tags (saved directly on customer document)
+      await this.loadWalletTransactions(); // ⭐ Load Ledger
+      
       this.manualTags = Array.isArray(this.customer?.manualTags) 
                         ? this.customer.manualTags.filter((t: string) => t && typeof t === 'string') 
                         : [];
       
       this.calculateOrderStats();
-      // 🔑 2. Calculate Auto Tags and merge them with fetched manual tags
       this.autoTags = this.calculateAndMergeTags();
       this.updateCustomerContactedDate();
 
@@ -298,15 +309,12 @@ export class ViewComponent implements OnInit, AfterViewInit, OnDestroy {
 
       if (this.showCalendarView) this.renderCalendar();
     } catch (error) {
-      // this.toast.show('Error loading customer data', 'error');
-      console.error(error);
+      console.error('Error loading customer details:', error);
     }
 
     this.loading = false;
   }
 
-  // ===== Stats & Charts (omitted for brevity) =====
-  
   calculateOrderStats() {
     this.chartLoading = true;
 
@@ -391,8 +399,6 @@ export class ViewComponent implements OnInit, AfterViewInit, OnDestroy {
       datasets: [{ data: [this.paymentReceived, this.paymentPending] }]
     };
   }
-  
-  // ... (rest of the chart and stats logic omitted for brevity, assumed functional) ...
   
   renderCalendar() {
     const calendarEl = document.getElementById('calendar');
@@ -574,7 +580,7 @@ export class ViewComponent implements OnInit, AfterViewInit, OnDestroy {
 
   savePipelineStage() {
     if (!this.customerId) return;
-    const ref = doc(this.firestore, `stores/${this.storeId}/customers/${this.customerId}`);
+    const ref = doc(this.firestore, `Stores/${this.storeId}/customers/${this.customerId}`);
     updateDoc(ref, { pipelineStage: this.pipelineStage }).catch(() => {});
     this.leadScore = this.computeLeadScore();
     this.updateLeadGauge();
@@ -615,12 +621,8 @@ export class ViewComponent implements OnInit, AfterViewInit, OnDestroy {
 
   formatDate(ts: any) { return formatDate(ts?.toDate?.() || ts, 'dd MMM yyyy', 'en-IN'); }
 
-
-  // Function to calculate Auto Tags AND merge them with the current manualTags state.
   calculateAndMergeTags(): string[] {
     const calculatedAutoTags: string[] = [];
-    
-    // --- 1. Auto-Generated Tags ---
     if (this.clv > 20000) calculatedAutoTags.push('💰 High-Spender');
     if (this.orders.length > 3) calculatedAutoTags.push('🔁 Repeat Buyer');
     if (this.orders.length === 0) calculatedAutoTags.push('✨ New Prospect');
@@ -631,17 +633,9 @@ export class ViewComponent implements OnInit, AfterViewInit, OnDestroy {
     }
     if (this.reminders.length > 0) calculatedAutoTags.push('📅 Engaged');
     
-    // --- 2. Combine with Manual Tags ---
-    // Use a Set to ensure uniqueness, then merge auto and manual tags.
-    const combinedTags = Array.from(new Set([
-        ...calculatedAutoTags, 
-        ...(this.manualTags || []) 
-    ]));
-    
-    return combinedTags;
+    return Array.from(new Set([...calculatedAutoTags, ...(this.manualTags || [])]));
   }
   
-
   toggleChartType() {
     this.chartType = this.chartType === 'line' ? 'bar' : 'line';
     const ds = this.revenueChartData.datasets?.[0] as any;
@@ -660,9 +654,8 @@ export class ViewComponent implements OnInit, AfterViewInit, OnDestroy {
       pinned: false, 
       type: 'General'
     };
-    const notesRef = collection(this.firestore, `stores/${this.storeId}/customers/${this.customerId}/notes`);
+    const notesRef = collection(this.firestore, `Stores/${this.storeId}/customers/${this.customerId}/notes`);
     await addDoc(notesRef, payload);
-    // this.toast.show('Note added', 'success');
     this.newNote = '';
     this.loadCustomerData();
   }
@@ -676,9 +669,8 @@ export class ViewComponent implements OnInit, AfterViewInit, OnDestroy {
       createdAt: new Date(), 
       type: this.newReminderType
     };
-    const remindersRef = collection(this.firestore, `stores/${this.storeId}/customers/${this.customerId}/reminders`);
+    const remindersRef = collection(this.firestore, `Stores/${this.storeId}/customers/${this.customerId}/reminders`);
     await addDoc(remindersRef, payload);
-    // this.toast.show('Reminder added', 'success');
     this.newReminder = '';
     this.reminderDate = '';
     this.newReminderType = 'general';
@@ -687,46 +679,34 @@ export class ViewComponent implements OnInit, AfterViewInit, OnDestroy {
 
   async updateReminder() {
     if (!this.selectedReminder?.id) return;
-    const ref = doc(this.firestore, `stores/${this.storeId}/customers/${this.customerId}/reminders/${this.selectedReminder.id}`);
+    const ref = doc(this.firestore, `Stores/${this.storeId}/customers/${this.customerId}/reminders/${this.selectedReminder.id}`);
     await updateDoc(ref, { 
       text: this.selectedReminder.text, 
       type: this.selectedReminder.type || 'general', 
       dueDate: Timestamp.fromDate(new Date(this.selectedReminderDate))
     });
-    // this.toast.show('Reminder updated', 'success');
     this.loadCustomerData();
   }
 
   async deleteReminder() {
     if (!this.selectedReminder?.id) return;
-    const ref = doc(
-      this.firestore,
-      `stores/${this.storeId}/customers/${this.customerId}/reminders/${this.selectedReminder.id}`
-    );
+    const ref = doc(this.firestore, `Stores/${this.storeId}/customers/${this.customerId}/reminders/${this.selectedReminder.id}`);
     await deleteDoc(ref);
-    // this.toast.show('Reminder deleted', 'success');
     this.loadCustomerData();
   }
 
   async snoozeReminder(reminderId: string, days: number) {
-    const reminderRef = doc(this.firestore, `stores/${this.storeId}/customers/${this.customerId}/reminders/${reminderId}`);
+    const reminderRef = doc(this.firestore, `Stores/${this.storeId}/customers/${this.customerId}/reminders/${reminderId}`);
     const newDue = new Date(); newDue.setDate(newDue.getDate() + days);
     await updateDoc(reminderRef, { dueDate: Timestamp.fromDate(newDue) });
-    // this.toast.show('Reminder snoozed', 'success');
     this.loadCustomerData();
   }
   
   addManualTag(event: Event) {
     const input = this.manualTagInput.trim().toLowerCase();
     if (!input) return;
-
-    if (event instanceof KeyboardEvent) {
-        event.preventDefault(); 
-    }
-
-    if (!this.manualTags.includes(input)) {
-        this.manualTags.push(input);
-    }
+    if (event instanceof KeyboardEvent) event.preventDefault(); 
+    if (!this.manualTags.includes(input)) this.manualTags.push(input);
     this.manualTagInput = '';
   }
 
@@ -737,16 +717,9 @@ export class ViewComponent implements OnInit, AfterViewInit, OnDestroy {
   async saveManualTags() {
     this.loading = true;
     try {
-      const ref = doc(this.firestore, `stores/${this.storeId}/customers/${this.customerId}`);
-      const tagsToSave = this.manualTags.filter(t => t.trim().length > 0);
-      
-      // 1. Save only the manual tags to Firestore
-      await updateDoc(ref, { manualTags: tagsToSave });
-      // this.toast.show('Manual tags saved', 'success');
-      
-     
+      const ref = doc(this.firestore, `Stores/${this.storeId}/customers/${this.customerId}`);
+      await updateDoc(ref, { manualTags: this.manualTags.filter(t => t.trim().length > 0) });
       await this.loadCustomerData(); 
-
     } catch (e) {
       console.error(e);
     } finally {
@@ -754,49 +727,15 @@ export class ViewComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
-
   getInitials(name: string): string {
     if (!name) return '';
     const parts = name.trim().split(/\s+/).filter(Boolean);
     if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
-    return (parts[0][0] + parts[1][0]).toUpperCase();
-  }
-
-  getPillClass(status: string): string {
-    const s = (status || '').toLowerCase();
-    if (s.includes('vip')) return 'vip';
-    if (s.includes('frequent')) return 'frequent';
-    if (s.includes('dormant')) return 'dormant';
-    return '';
-  }
-
-  get customerStatus(): string[] {
-    const out: string[] = [];
-
-    if ((this.clv || 0) > 20_000) out.push('💎 VIP');
-    if ((this.orders?.length || 0) >= 4) out.push('🔁 Frequent Buyer');
-
-    const last = this.orders?.length
-      ? (this.orders[this.orders.length - 1]?.createdAt?.toDate?.() ||
-        this.orders[this.orders.length - 1]?.createdAt ||
-        null)
-      : null;
-
-    if (last) {
-      const days = (Date.now() - new Date(last).getTime()) / (1000 * 60 * 60 * 24);
-      if (days > 90) out.push('🛑 Dormant');
-    }
-
-    return out;
+    return (parts[0][0] + (parts[1] ? parts[1][0] : '')).toUpperCase();
   }
 
   isDormant(): boolean {
-    const last = this.orders?.length
-      ? (this.orders[this.orders.length - 1]?.createdAt?.toDate?.() ||
-        this.orders[this.orders.length - 1]?.createdAt ||
-        null)
-      : null;
-
+    const last = this.orders?.length ? (this.orders[this.orders.length - 1]?.createdAt?.toDate?.() || this.orders[this.orders.length - 1]?.createdAt || null) : null;
     if (!last) return false;
     const days = (Date.now() - new Date(last).getTime()) / (1000 * 60 * 60 * 24);
     return days > 90;

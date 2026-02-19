@@ -1,0 +1,241 @@
+<div class="loyalty-wrap">
+  <header class="page-head">
+    <div class="title-section">
+      <button class="back-btn" [routerLink]="['/', storeId, 'crm']">← Back to CRM</button>
+      <h1 class="form-title">Loyalty Program Settings</h1>
+      <p class="form-description">Configure how your customers earn and redeem rewards.</p>
+    </div>
+    
+    <div class="header-badges">
+      <label class="ios-toggle">
+        <input type="checkbox" [(ngModel)]="settings.isEnabled">
+        <span class="slider"></span>
+      </label>
+      <span class="status-text" [class.active]="settings.isEnabled">
+        {{ settings.isEnabled ? 'Program Active' : 'Program Disabled' }}
+      </span>
+    </div>
+  </header>
+
+  @if (loading) {
+    <div class="loading-state">Loading settings...</div>
+  } @else {
+    <div class="form-layout-grid" [class.disabled-state]="!settings.isEnabled">
+      <div class="main-column">
+
+        <section class="form-card" style="border-left: 4px solid #f59e0b;">
+          <div class="card-header">
+            <h3 style="color: #d97706;"><i class="bi bi-shop me-2"></i>Multi-Store Sync (Cross-Store Loyalty)</h3>
+            <p>Allow customers to earn and redeem points across all your branches.</p>
+          </div>
+          <div class="field-wrap" style="margin-top: 20px;">
+            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
+              <label class="ios-toggle">
+                <input type="checkbox" [(ngModel)]="settings.isCrossStoreLoyaltyEnabled">
+                <span class="slider"></span>
+              </label>
+              <span style="font-weight: 600; font-size: 15px; color: var(--ink);">Enable Cross-Store Global Wallets</span>
+            </div>
+            <span class="help-txt" style="display: block;">If turned on, customer balances will merge into a global pool. Existing local points are automatically migrated on their next visit. Requires stores to be under the same Owner ID.</span>
+          </div>
+        </section>
+
+        <section class="form-card" style="border-left: 4px solid #10b981;">
+          <div class="card-header">
+            <h3 style="color: #059669;"><i class="bi bi-clock-history me-2"></i>Happy Hour (Time-Based Bonus)</h3>
+            <p>Multiply points earned during specific slow hours to increase foot traffic.</p>
+          </div>
+          
+          <div class="field-wrap" style="margin-top: 15px; margin-bottom: 20px;">
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <label class="ios-toggle">
+                <input type="checkbox" [(ngModel)]="settings.isHappyHourEnabled">
+                <span class="slider"></span>
+              </label>
+              <span style="font-weight: 600; font-size: 15px;">Enable Happy Hour Multiplier</span>
+            </div>
+          </div>
+
+          <div class="row" style="display: flex; gap: 20px; flex-wrap: wrap;">
+            <div class="field-wrap" style="flex: 1; min-width: 150px;">
+              <label>Repeat Day</label>
+              <select class="premium-input" [(ngModel)]="settings.happyHourDay">
+                <option value="Everyday">Everyday</option>
+                <option value="Monday">Monday</option>
+                <option value="Tuesday">Tuesday</option>
+                <option value="Wednesday">Wednesday</option>
+                <option value="Thursday">Thursday</option>
+                <option value="Friday">Friday</option>
+                <option value="Saturday">Saturday</option>
+                <option value="Sunday">Sunday</option>
+              </select>
+            </div>
+            <div class="field-wrap" style="flex: 1; min-width: 120px;">
+              <label>Start Time</label>
+              <input type="time" class="premium-input" [(ngModel)]="settings.happyHourStart">
+            </div>
+            <div class="field-wrap" style="flex: 1; min-width: 120px;">
+              <label>End Time</label>
+              <input type="time" class="premium-input" [(ngModel)]="settings.happyHourEnd">
+            </div>
+            <div class="field-wrap" style="flex: 1; min-width: 150px;">
+              <label>Bonus Multiplier (e.g. 2x)</label>
+              <input type="number" class="premium-input" [(ngModel)]="settings.happyHourMultiplier" step="0.1">
+            </div>
+          </div>
+        </section>
+        
+        <section class="form-card">
+          <div class="card-header">
+            <h3>Earn Rules</h3>
+            <p>How do customers earn points when they spend money?</p>
+          </div>
+          <div class="inline-rule-group">
+            <span>For every ₹</span>
+            <input type="number" class="premium-input small-input" [(ngModel)]="settings.earnSpendAmount" min="1">
+            <span>spent, the customer earns</span>
+            <input type="number" class="premium-input small-input" [(ngModel)]="settings.earnPoints" min="0.1">
+            <span>Points.</span>
+          </div>
+        </section>
+
+        <section class="form-card" style="border-left: 4px solid #8b5cf6;">
+          <div class="card-header">
+            <h3 style="color: #8b5cf6;"><i class="bi bi-gift-fill me-2"></i>Behavior-Based Rewards</h3>
+            <p>Drive customer retention by rewarding loyalty actions automatically.</p>
+          </div>
+          
+          <div class="row" style="display: flex; gap: 20px; margin-top: 15px;">
+            <div class="field-wrap" style="flex: 1;">
+              <label>Welcome Bonus (1st Visit)</label>
+              <input type="number" class="premium-input" [(ngModel)]="settings.welcomeBonusPoints" min="0">
+              <span class="help-txt" style="display: block; margin-top: 5px;">Bonus points given on a customer's very first order.</span>
+            </div>
+          </div>
+
+          <div class="divider" style="margin: 20px 0; border-top: 1px solid var(--border);"></div>
+
+          <div class="row" style="display: flex; gap: 20px; align-items: center;">
+            <div class="field-wrap" style="flex: 1;">
+              <label>Milestone Target (Visits)</label>
+              <input type="number" class="premium-input" [(ngModel)]="settings.milestoneVisitCount" min="2">
+              <span class="help-txt" style="display: block; margin-top: 5px;">e.g., Reward them every 5 visits.</span>
+            </div>
+            
+            <div class="field-wrap" style="flex: 1;">
+              <label>Milestone Bonus Points</label>
+              <input type="number" class="premium-input" [(ngModel)]="settings.milestoneBonusPoints" min="0">
+              <span class="help-txt" style="display: block; margin-top: 5px;">Points awarded when the milestone is hit.</span>
+            </div>
+          </div>
+        </section>
+
+        <section class="form-card">
+          <div class="card-header">
+            <h3>Redeem Rules</h3>
+            <p>What is the cash value of a point when checking out?</p>
+          </div>
+          <div class="inline-rule-group">
+            <span>Every</span>
+            <input type="number" class="premium-input small-input" [(ngModel)]="settings.redeemPoints" min="1">
+            <span>Points can be redeemed for ₹</span>
+            <input type="number" class="premium-input small-input" [(ngModel)]="settings.redeemValue" min="0.1">
+            <span>discount.</span>
+          </div>
+
+          <div class="divider"></div>
+
+          <div class="field-wrap">
+            <label>Minimum Points Required to Redeem</label>
+            <input type="number" class="premium-input half-input" [(ngModel)]="settings.minRedeemPoints" min="0">
+            <span class="help-txt">Customers cannot use points until they reach this balance.</span>
+          </div>
+        </section>
+
+        <section class="form-card" style="border-left: 4px solid #ef4444;">
+          <div class="card-header">
+            <h3 style="color: #ef4444;"><i class="bi bi-shield-lock-fill me-2"></i>Anti-Fraud Controls</h3>
+            <p>Set limits to prevent staff misuse or extreme discounting on a single order.</p>
+          </div>
+          
+          <div class="row" style="display: flex; gap: 20px; margin-top: 15px;">
+            <div class="field-wrap" style="flex: 1;">
+              <label>Max Points Earned Per Order</label>
+              <input type="number" class="premium-input" [(ngModel)]="settings.maxEarnPerOrder" min="0">
+              <span class="help-txt" style="display: block; margin-top: 5px;">Caps the points given, even on huge bills.</span>
+            </div>
+            
+            <div class="field-wrap" style="flex: 1;">
+              <label>Max Points Redeemed Per Order</label>
+              <input type="number" class="premium-input" [(ngModel)]="settings.maxRedeemPerOrder" min="0">
+              <span class="help-txt" style="display: block; margin-top: 5px;">Prevents draining an entire high-value wallet at once.</span>
+            </div>
+          </div>
+        </section>
+
+        <section class="form-card">
+          <div class="card-header">
+            <h3>Loyalty Tiers (Gamification)</h3>
+            <p>Reward your best customers by multiplying the points they earn.</p>
+          </div>
+          
+          <div class="tiers-container">
+            @for (tier of settings.tiers; track tier.name; let i = $index) {
+              <div class="tier-row">
+                <div class="field-wrap">
+                  <label>Tier Name</label>
+                  <input type="text" class="premium-input" [(ngModel)]="settings.tiers[i].name">
+                </div>
+                <div class="field-wrap">
+                  <label>Min. Lifetime Points</label>
+                  <input type="number" class="premium-input" [(ngModel)]="settings.tiers[i].minPoints">
+                </div>
+                <div class="field-wrap">
+                  <label>Point Multiplier (e.g. 1.5x)</label>
+                  <input type="number" class="premium-input" [(ngModel)]="settings.tiers[i].multiplier" step="0.1">
+                </div>
+                <button class="icon-btn delete-btn" (click)="removeTier(i)" title="Remove Tier">
+                  🗑️
+                </button>
+              </div>
+            }
+          </div>
+          
+          <button class="btn ghost mt-3" (click)="addTier()">+ Add Another Tier</button>
+        </section>
+
+      </div>
+
+      <aside class="side-column">
+        <section class="form-card sticky-sidebar">
+          <div class="card-header">
+            <h3>Summary</h3>
+          </div>
+          <div class="summary-box">
+            <p><strong>Status:</strong> {{ settings.isEnabled ? 'ON' : 'OFF' }}</p>
+            <p><strong>Earn:</strong> ₹{{ settings.earnSpendAmount }} = {{ settings.earnPoints }} pt</p>
+            
+            <hr style="margin: 10px 0; border-color: #e2e8f0;">
+            <p style="font-size: 12px; color: #10b981;"><strong>Happy Hour:</strong> {{ settings.isHappyHourEnabled ? settings.happyHourMultiplier + 'x Points' : 'Off' }}</p>
+
+            <hr style="margin: 10px 0; border-color: #e2e8f0;">
+            <p style="font-size: 12px; color: #8b5cf6;"><strong>Welcome:</strong> +{{ settings.welcomeBonusPoints }} pts</p>
+            <p style="font-size: 12px; color: #8b5cf6;"><strong>Milestone:</strong> +{{ settings.milestoneBonusPoints }} pts / {{ settings.milestoneVisitCount }} visits</p>
+            
+            <hr style="margin: 10px 0; border-color: #e2e8f0;">
+            <p style="font-size: 12px; color: #ef4444;"><strong>Max Earn:</strong> {{ settings.maxEarnPerOrder }} pts/order</p>
+            
+            <hr style="margin: 10px 0; border-color: #e2e8f0;">
+            <p style="font-size: 12px; color: #d97706;"><strong>Multi-Store:</strong> {{ settings.isCrossStoreLoyaltyEnabled ? 'Active' : 'Disabled' }}</p>
+            <hr style="margin: 10px 0; border-color: #e2e8f0;">
+            <p><strong>Tiers:</strong> {{ settings.tiers.length }} configured</p>
+          </div>
+          
+          <button class="btn primary-btn-premium w-100" [disabled]="saving" (click)="saveSettings()">
+            {{ saving ? 'Saving...' : 'Save Loyalty Settings' }}
+          </button>
+        </section>
+      </aside>
+    </div>
+  }
+</div>

@@ -389,6 +389,29 @@
           <input type="text" [(ngModel)]="checkoutCustomerMobile" (blur)="loadCustomerByMobile(checkoutCustomerMobile)" placeholder="9876543210" style="width:100%">
           @if (mobileError) { <small class="text-danger">{{ mobileError }}</small> }
         </div>
+
+        @if (customerProfile) {
+          <div class="loyalty-mini-card">
+            <div class="l-badge">{{ customerProfile.tier }} Member</div>
+            <div class="l-row">
+              <span>Current Points:</span>
+              <strong>{{ customerProfile.loyaltyPoints }}</strong>
+            </div>
+            
+            @if (loyaltyDiscount > 0) {
+              <div class="mt-2 text-success fw-bold" style="font-size: 13px; text-align: center; padding: 8px; background: #dcfce7; border-radius: 6px; border: 1px solid #bbf7d0;">
+                <i class="bi bi-check-circle-fill me-1"></i> {{ pointsToRedeem | number:'1.0-0' }} Points Applied!
+              </div>
+            } @else if (loyaltySettings && customerProfile.loyaltyPoints >= loyaltySettings.minRedeemPoints) {
+              <button class="btn success small w-100 mt-2" (click)="applyLoyaltyRedemption()">
+                Redeem Points for Discount
+              </button>
+            } @else {
+              <small class="text-muted">Need {{ loyaltySettings?.minRedeemPoints }} pts to redeem</small>
+            }
+          </div>
+        }
+
         <div class="form-group">
           <label>Customer Name</label>
           <input type="text" [(ngModel)]="checkoutCustomerName" placeholder="John Doe" style="width:100%">
@@ -426,9 +449,31 @@
           </div>
         </div>
 
-        <div class="total-row" style="border-top:none; padding-top:0;">
-          <span>To Pay</span>
-          <span class="text-primary">{{ getCartTotal() | currency:'INR' }}</span>
+        <div class="cart-summary-final mt-4">
+          <div class="summary-row">
+            <span>Subtotal</span>
+            <span>{{ getCartSubtotal() | currency:'INR' }}</span>
+          </div>
+          @if (loyaltyDiscount > 0) {
+            <div class="summary-row text-success">
+              <span>Loyalty Redemption</span>
+              <span>-{{ loyaltyDiscount | currency:'INR' }}</span>
+            </div>
+          }
+          <div class="summary-row">
+            <span>Tax</span>
+            <span>{{ getCartTax() | currency:'INR' }}</span>
+          </div>
+          <div class="total-row large">
+            <span>Final Bill</span>
+            <span class="text-primary">{{ getCartTotal() | currency:'INR' }}</span>
+          </div>
+          
+          @if (loyaltySettings?.isEnabled) {
+            <div class="earn-banner">
+              ✨ Customer earns <strong>{{ calculateEarnedPoints() }} points</strong> on this visit
+            </div>
+          }
         </div>
       </div>
 

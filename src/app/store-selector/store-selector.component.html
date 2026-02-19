@@ -4,7 +4,7 @@
       <h1>Outlets Control Center</h1>
       <p class="muted">Manage operational status across all your locations.</p>
     </div>
-    <button class="btn primary w-auto">+ Add Outlet</button>
+    <button class="btn primary w-auto" (click)="addNewStore()">+ Add Outlet</button>
   </div>
 
   @if (loading) {
@@ -65,7 +65,7 @@
             <button class="btn primary" (click)="enterStore(store)">Enter Dashboard →</button>
             <div class="action-group">
               <button class="btn secondary tiny">Edit Info</button>
-              <button class="btn ghost tiny danger">Delete</button>
+              <button class="btn ghost tiny danger" (click)="removeStore(store, $event)">Delete</button>
             </div>
           </div>
         </div>

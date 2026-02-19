@@ -1,25 +1,11 @@
-import { Component, OnInit, OnDestroy, ViewEncapsulation, HostListener } from '@angular/core'; // Added HostListener
+import { Component, OnInit, OnDestroy, ViewEncapsulation, HostListener } from '@angular/core';
 import { CommonModule, CurrencyPipe, TitleCasePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import {
-  Firestore,
-  collection,
-  collectionData,
-  query,
-  orderBy,
-  doc,
-  serverTimestamp,
-  updateDoc,
-  deleteDoc,
-  setDoc,
-  getDoc,
-  getDocs,
-  where,
-  writeBatch
+  Firestore, collection, collectionData, query, orderBy, doc, serverTimestamp, updateDoc, deleteDoc, setDoc, getDoc, getDocs, where, writeBatch, increment
 } from '@angular/fire/firestore';
 import { ActivatedRoute, Router } from '@angular/router';
 import { combineLatest, interval, Subscription, BehaviorSubject } from 'rxjs';
-import { map } from 'rxjs/operators';
 
 /* ------------------------
    Interfaces
@@ -30,8 +16,18 @@ interface Modifier { id?: string; name: string; type: 'addon' | 'variation'; opt
 interface MenuItem { id?: string; name: string; category?: string; price: number; imageUrl?: string; recipe?: { rawMaterialId: string; name?: string; quantity: number; unit?: string }[]; modifiers?: string[]; trackInventory?: boolean; isActive?: boolean; totalServingsInInventory?: number | null; taxRate?: number; foodType?: string; isVeg?: boolean; }
 interface CartModifierSelection { modifierId: string; modifierName?: string; optionLabel: string; optionPrice: number; type: 'addon' | 'variation'; }
 interface CartItem { id?: string; name: string; basePrice: number; price: number; category?: string; quantity: number; subtotal: number; taxRate: number; taxAmount: number; recipe?: MenuItem['recipe']; modifiers?: CartModifierSelection[]; totalServingsInInventory?: number | null; status?: 'Pending' | 'In Progress' | 'Ready' | 'Served'; foodType?: string; isVeg?: boolean; }
-interface Order { id?: string; orderType: 'Dine-in' | 'Takeaway'; tableNumber?: number | null; customerMobile?: string; customerName?: string; items: CartItem[]; subtotal: number; tax: number; discount: number; taxRate: number; discountType: 'percentage' | 'flat'; discountAmount: number; total: number; status: 'Draft' | 'Open' | 'In Progress' | 'Ready' | 'Paid' | 'Cancelled'; createdAt?: any; startTime?: number; waiter?: string | null; paymentMode?: 'CASH' | 'CARD' | 'UPI' | 'OTHER' | null; paymentModeOther?: string | null; paidAt?: any; }
+interface Order { id?: string; orderType: 'Dine-in' | 'Takeaway'; tableNumber?: number | null; customerMobile?: string; customerName?: string; items: CartItem[]; subtotal: number; tax: number; discount: number; taxRate: number; discountType: 'percentage' | 'flat'; discountAmount: number; total: number; status: 'Draft' | 'Open' | 'In Progress' | 'Ready' | 'Paid' | 'Cancelled'; createdAt?: any; startTime?: number; waiter?: string | null; paymentMode?: 'CASH' | 'CARD' | 'UPI' | 'OTHER' | null; paymentModeOther?: string | null; paidAt?: any; loyaltyPointsEarned?: number; loyaltyPointsRedeemed?: number; }
 interface Table { id?: string; number: number; capacity: number; isOccupied?: boolean; status?: 'Available' | 'Occupied' | 'Reserved'; orderId?: string | null; waiter?: string | null; }
+
+interface LoyaltySettings { 
+  isEnabled: boolean; earnSpendAmount: number; earnPoints: number; redeemPoints: number; redeemValue: number; minRedeemPoints: number; 
+  maxEarnPerOrder?: number; maxRedeemPerOrder?: number; 
+  welcomeBonusPoints?: number; milestoneVisitCount?: number; milestoneBonusPoints?: number; 
+  isCrossStoreLoyaltyEnabled?: boolean;
+  isHappyHourEnabled?: boolean; happyHourDay?: string; happyHourStart?: string; happyHourEnd?: string; happyHourMultiplier?: number; // ⭐ Added Happy Hour
+  tiers: any[]; 
+}
+interface CustomerProfile { name: string; mobile: string; loyaltyPoints: number; lifetimeSpend: number; tier: string; visitCount?: number; }
 
 @Component({
   selector: 'app-pos',
@@ -46,6 +42,11 @@ export class PosComponent implements OnInit, OnDestroy {
   storeId: string | null = null;
   storeInfo: any = {}; 
   globalCustomisation: any = { taxPercentage: 5, taxName: 'GST' }; 
+
+  loyaltySettings: LoyaltySettings | null = null;
+  customerProfile: CustomerProfile | null = null;
+  pointsToRedeem = 0;
+  loyaltyDiscount = 0;
 
   rawMaterials: RawMaterial[] = [];
   menuItems: MenuItem[] = [];
@@ -94,15 +95,10 @@ export class PosComponent implements OnInit, OnDestroy {
     window.addEventListener('offline', () => this.isOnline = false);
   }
 
-  /* ====================== FIX: The Deep Sanitizer ====================== */
   private sanitizeData(data: any): any {
     if (data === undefined) return null;
     if (data === null || typeof data !== 'object') return data;
-    
-    if (Array.isArray(data)) {
-      return data.map(item => this.sanitizeData(item));
-    }
-    
+    if (Array.isArray(data)) return data.map(item => this.sanitizeData(item));
     const cleanObj: any = {};
     for (const key in data) {
       if (Object.prototype.hasOwnProperty.call(data, key)) {
@@ -112,33 +108,27 @@ export class PosComponent implements OnInit, OnDestroy {
     return cleanObj;
   }
 
-  /* ====================== Keyboard Shortcuts ====================== */
   @HostListener('window:keydown', ['$event'])
   handleKeyboardEvent(event: KeyboardEvent) {
-    // Check if any modal/panel is already open to avoid triggering underneath them
     if (this.showAddItemPanel || this.showTableModal) return;
-
-    // Ctrl + Enter to open checkout panel
     if (event.ctrlKey && event.key === 'Enter') {
       event.preventDefault();
-      if (this.cart.length > 0 && !this.showCheckoutPanel) {
-        this.openCheckoutPanel();
-      }
+      if (this.cart.length > 0 && !this.showCheckoutPanel) this.openCheckoutPanel();
     }
-
-    // Shift + Backspace to clear cart
     if (event.shiftKey && event.key === 'Backspace') {
       event.preventDefault();
       if (this.cart.length > 0 && !this.showCheckoutPanel) {
-        if(confirm('Are you sure you want to clear the cart?')) {
-           this.cart = [];
-        }
+        if(confirm('Are you sure you want to clear the cart?')) this.cart = [];
       }
     }
   }
 
-  /* ====================== Handlers ====================== */
-  closeCheckoutPanel() { this.showCheckoutPanel = false; }
+  closeCheckoutPanel() { 
+    this.showCheckoutPanel = false; 
+    this.customerProfile = null; 
+    this.loyaltyDiscount = 0; 
+    this.pointsToRedeem = 0; 
+  }
   closeAddItemPanel() { this.showAddItemPanel = false; }
   closeTableModal() { this.showTableModal = false; }
 
@@ -167,11 +157,23 @@ export class PosComponent implements OnInit, OnDestroy {
       const id = this.currentOrder?.id || this.activeTable?.orderId;
       const ref = id ? doc(this.firestore, this.ordersColPath(), id) : doc(collection(this.firestore, this.ordersColPath()));
 
+      const baseEarned = this.getBaseEarnedPoints();
+      const welcomeBonus = this.getWelcomeBonus();
+      const milestoneBonus = this.getMilestoneBonus();
+      const happyHourBonus = this.getHappyHourBonus(baseEarned); // ⭐ Calc Happy Hour
+      const totalEarned = markPaid ? (baseEarned + welcomeBonus + milestoneBonus + happyHourBonus) : 0;
+      const redeemed = markPaid ? this.pointsToRedeem : 0;
+
+      const brandId = this.storeInfo?.ownerId || this.storeInfo?.adminUid;
+      const isGlobal = this.loyaltySettings?.isCrossStoreLoyaltyEnabled && brandId;
+
       const orderPayload = this.sanitizeData({
         items: this.cart.map(i => ({ ...i, status: i.status === 'Pending' ? 'Open' : i.status })),
         subtotal: this.getCartSubtotal(),
         tax: this.getCartTax(),
-        discount: this.getCartDiscount(),
+        discount: this.getCartDiscount() + this.loyaltyDiscount,
+        loyaltyPointsEarned: totalEarned,
+        loyaltyPointsRedeemed: redeemed,
         total: this.getCartTotal(),
         customerMobile: this.checkoutCustomerMobile,
         customerName: this.checkoutCustomerName,
@@ -193,6 +195,52 @@ export class PosComponent implements OnInit, OnDestroy {
         batch.set(ref, orderPayload);
       } else {
         batch.update(ref, orderPayload);
+      }
+
+      if (markPaid) {
+        let newTier = this.customerProfile?.tier || 'Standard';
+        const newLifetimeSpend = (this.customerProfile?.lifetimeSpend || 0) + this.getCartTotal();
+
+        if (this.loyaltySettings?.tiers) {
+           const sortedTiers = [...this.loyaltySettings.tiers].sort((a, b) => b.minPoints - a.minPoints);
+           for (const tier of sortedTiers) {
+              if (newLifetimeSpend >= tier.minPoints) {
+                newTier = tier.name;
+                break;
+              }
+           }
+        }
+
+        const custPayload = {
+          name: this.checkoutCustomerName,
+          mobile: this.checkoutCustomerMobile,
+          loyaltyPoints: increment(totalEarned - redeemed),
+          lifetimeSpend: increment(this.getCartTotal()),
+          visitCount: increment(1),
+          tier: newTier, 
+          lastVisited: serverTimestamp()
+        };
+
+        const localCustRef = doc(this.firestore, this.customersColPath(), this.checkoutCustomerMobile);
+        batch.set(localCustRef, custPayload, { merge: true });
+
+        if (baseEarned > 0) batch.set(doc(collection(this.firestore, `${this.customersColPath()}/${this.checkoutCustomerMobile}/pointsTransactions`)), { type: 'EARN', points: baseEarned, orderId: ref.id, createdAt: serverTimestamp(), reason: 'Purchase' });
+        if (welcomeBonus > 0) batch.set(doc(collection(this.firestore, `${this.customersColPath()}/${this.checkoutCustomerMobile}/pointsTransactions`)), { type: 'EARN', points: welcomeBonus, orderId: ref.id, createdAt: serverTimestamp(), reason: 'Welcome Bonus' });
+        if (milestoneBonus > 0) batch.set(doc(collection(this.firestore, `${this.customersColPath()}/${this.checkoutCustomerMobile}/pointsTransactions`)), { type: 'EARN', points: milestoneBonus, orderId: ref.id, createdAt: serverTimestamp(), reason: `Milestone Bonus (${(this.customerProfile?.visitCount || 0) + 1} Visits)` });
+        if (happyHourBonus > 0) batch.set(doc(collection(this.firestore, `${this.customersColPath()}/${this.checkoutCustomerMobile}/pointsTransactions`)), { type: 'EARN', points: happyHourBonus, orderId: ref.id, createdAt: serverTimestamp(), reason: 'Happy Hour Bonus' }); // ⭐ Log HH
+        if (redeemed > 0) batch.set(doc(collection(this.firestore, `${this.customersColPath()}/${this.checkoutCustomerMobile}/pointsTransactions`)), { type: 'REDEEM', points: redeemed, orderId: ref.id, createdAt: serverTimestamp(), reason: 'Discount' });
+
+        if (isGlobal) {
+          const globalPath = `BrandCustomers/${brandId}/customers`;
+          const globalCustRef = doc(this.firestore, globalPath, this.checkoutCustomerMobile);
+          batch.set(globalCustRef, custPayload, { merge: true });
+
+          if (baseEarned > 0) batch.set(doc(collection(this.firestore, `${globalPath}/${this.checkoutCustomerMobile}/pointsTransactions`)), { type: 'EARN', points: baseEarned, orderId: ref.id, createdAt: serverTimestamp(), reason: 'Purchase' });
+          if (welcomeBonus > 0) batch.set(doc(collection(this.firestore, `${globalPath}/${this.checkoutCustomerMobile}/pointsTransactions`)), { type: 'EARN', points: welcomeBonus, orderId: ref.id, createdAt: serverTimestamp(), reason: 'Welcome Bonus' });
+          if (milestoneBonus > 0) batch.set(doc(collection(this.firestore, `${globalPath}/${this.checkoutCustomerMobile}/pointsTransactions`)), { type: 'EARN', points: milestoneBonus, orderId: ref.id, createdAt: serverTimestamp(), reason: `Milestone Bonus (${(this.customerProfile?.visitCount || 0) + 1} Visits)` });
+          if (happyHourBonus > 0) batch.set(doc(collection(this.firestore, `${globalPath}/${this.checkoutCustomerMobile}/pointsTransactions`)), { type: 'EARN', points: happyHourBonus, orderId: ref.id, createdAt: serverTimestamp(), reason: 'Happy Hour Bonus' });
+          if (redeemed > 0) batch.set(doc(collection(this.firestore, `${globalPath}/${this.checkoutCustomerMobile}/pointsTransactions`)), { type: 'REDEEM', points: redeemed, orderId: ref.id, createdAt: serverTimestamp(), reason: 'Discount' });
+        }
       }
 
       if (this.orderType === 'Dine-in' && this.activeTable?.id) {
@@ -247,7 +295,112 @@ export class PosComponent implements OnInit, OnDestroy {
     } catch (e) { console.error('POS Error:', e); }
   }
 
-  /* ====================== Subscriptions & Data (Untouched) ====================== */
+  getBaseEarnedPoints(): number {
+    if (!this.loyaltySettings?.isEnabled) return 0;
+    const eligibleTotal = this.getCartSubtotal() - this.getCartDiscount();
+    let basePoints = Math.floor(eligibleTotal / this.loyaltySettings.earnSpendAmount) * this.loyaltySettings.earnPoints;
+    let multiplier = 1;
+    if (this.customerProfile && this.loyaltySettings.tiers) {
+        const userTier = this.loyaltySettings.tiers.find(t => t.name === this.customerProfile?.tier);
+        if (userTier) multiplier = userTier.multiplier || 1;
+    }
+    let totalBase = basePoints * multiplier;
+    if (this.loyaltySettings.maxEarnPerOrder && this.loyaltySettings.maxEarnPerOrder > 0) {
+      if (totalBase > this.loyaltySettings.maxEarnPerOrder) {
+        totalBase = this.loyaltySettings.maxEarnPerOrder;
+      }
+    }
+    return totalBase;
+  }
+
+  getWelcomeBonus(): number {
+    if (!this.loyaltySettings?.isEnabled) return 0;
+    if (!this.customerProfile || (this.customerProfile.visitCount || 0) === 0) {
+      return this.loyaltySettings.welcomeBonusPoints || 0;
+    }
+    return 0;
+  }
+
+  getMilestoneBonus(): number {
+    if (!this.loyaltySettings?.isEnabled) return 0;
+    const visits = this.customerProfile ? (this.customerProfile.visitCount || 0) : 0;
+    const target = this.loyaltySettings.milestoneVisitCount;
+    if (target && target > 0 && ((visits + 1) % target === 0)) {
+      return this.loyaltySettings.milestoneBonusPoints || 0;
+    }
+    return 0;
+  }
+
+  // ⭐ NEW: Calculate Time-Based Happy Hour Bonus
+  getHappyHourBonus(basePoints: number): number {
+    if (!this.loyaltySettings?.isHappyHourEnabled || !this.loyaltySettings.happyHourMultiplier) return 0;
+    
+    const now = new Date();
+    const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    const currentDay = days[now.getDay()];
+
+    // Check Day
+    if (this.loyaltySettings.happyHourDay !== 'Everyday' && this.loyaltySettings.happyHourDay !== currentDay) return 0;
+
+    // Check Time
+    const startTime = this.loyaltySettings.happyHourStart || '00:00';
+    const endTime = this.loyaltySettings.happyHourEnd || '23:59';
+    
+    const [startH, startM] = startTime.split(':').map(Number);
+    const [endH, endM] = endTime.split(':').map(Number);
+    
+    const startTotal = (startH * 60) + startM;
+    const endTotal = (endH * 60) + endM;
+    const currentTotal = (now.getHours() * 60) + now.getMinutes();
+
+    if (currentTotal >= startTotal && currentTotal <= endTotal) {
+      // Bonus is (Multiplier - 1) * Base Points. 
+      // e.g., If HH is 2x, bonus is 1x additional points.
+      return Math.floor(basePoints * (this.loyaltySettings.happyHourMultiplier - 1));
+    }
+
+    return 0;
+  }
+
+  calculateEarnedPoints(): number {
+    const base = this.getBaseEarnedPoints();
+    return base + this.getWelcomeBonus() + this.getMilestoneBonus() + this.getHappyHourBonus(base);
+  }
+
+  applyLoyaltyRedemption() {
+    if (!this.customerProfile || !this.loyaltySettings) return;
+    
+    let available = this.customerProfile.loyaltyPoints;
+    
+    if (available < this.loyaltySettings.minRedeemPoints) {
+      alert(`Min. ${this.loyaltySettings.minRedeemPoints} pts required.`);
+      return;
+    }
+
+    if (this.loyaltySettings.maxRedeemPerOrder && this.loyaltySettings.maxRedeemPerOrder > 0) {
+      if (available > this.loyaltySettings.maxRedeemPerOrder) {
+         available = this.loyaltySettings.maxRedeemPerOrder;
+      }
+    }
+
+    const discountVal = (available / this.loyaltySettings.redeemPoints) * this.loyaltySettings.redeemValue;
+    const cartMax = this.getCartSubtotal() - this.getCartDiscount();
+    
+    this.loyaltyDiscount = Math.min(discountVal, cartMax);
+    this.pointsToRedeem = (this.loyaltyDiscount / this.loyaltySettings.redeemValue) * this.loyaltySettings.redeemPoints;
+    
+    if (available === this.loyaltySettings.maxRedeemPerOrder && available < this.customerProfile.loyaltyPoints) {
+       alert(`Note: Redemption capped at ${this.loyaltySettings.maxRedeemPerOrder} points per order due to store policy.`);
+    }
+  }
+
+  async loadLoyaltySettings() {
+    try {
+      const snap = await getDoc(doc(this.firestore, `Stores/${this.storeId}/settings/loyalty`));
+      if (snap.exists()) this.loyaltySettings = snap.data() as LoyaltySettings;
+    } catch (e) {}
+  }
+
   async ngOnInit(): Promise<void> {
     this.storeSlug = this.route.snapshot.paramMap.get('storeSlug');
     if (!this.storeSlug) return;
@@ -257,6 +410,7 @@ export class PosComponent implements OnInit, OnDestroy {
       this.storeId = snap.docs[0].id;
       await this.loadStoreInfo();
       await this.loadGlobalCustomisation();
+      await this.loadLoyaltySettings();
     } catch (err) { return; }
 
     const raws$ = collectionData(query(collection(this.firestore, `Stores/${this.storeId}/rawMaterials`), orderBy('name')), { idField: 'id' });
@@ -290,7 +444,6 @@ export class PosComponent implements OnInit, OnDestroy {
         this.applyFilterAndSearch();
       }
     }));
-    this.timerSub = interval(1000).subscribe(() => {});
   }
 
   ngOnDestroy(): void { this.subs.forEach(s => s.unsubscribe()); this.timerSub?.unsubscribe(); }
@@ -352,7 +505,6 @@ export class PosComponent implements OnInit, OnDestroy {
 
   filterByCategory(cat: string) { this.activeCategory = cat; this.applyFilterAndSearch(); }
   onSearchChange(text: string) { this.search$.next(text); this.applyFilterAndSearch(); }
-
   addItemFromCard(item: MenuItem) { if (item.modifiers?.length) this.openAddItemPanel(item); else this.addDirectToCart(item); }
 
   addDirectToCart(item: MenuItem) {
@@ -431,9 +583,9 @@ export class PosComponent implements OnInit, OnDestroy {
   }
   getCartTax(): number { 
     const s = this.getCartSubtotal(); if (s === 0) return 0;
-    return this.cart.reduce((sum, it) => sum + (it.taxAmount || 0), 0) * (1 - (this.getCartDiscount() / s));
+    return this.cart.reduce((sum, it) => sum + (it.taxAmount || 0), 0) * (1 - ((this.getCartDiscount() + this.loyaltyDiscount) / s));
   }
-  getCartTotal(): number { return Math.max(0, this.getCartSubtotal() - this.getCartDiscount() + this.getCartTax()); }
+  getCartTotal(): number { return Math.max(0, this.getCartSubtotal() - this.getCartDiscount() - this.loyaltyDiscount + this.getCartTax()); }
 
   updateCartItemQuantity(it: CartItem, q: number) {
     if (q <= 0) { this.removeItemFromCart(it); return; }
@@ -479,9 +631,45 @@ export class PosComponent implements OnInit, OnDestroy {
     await batch.commit();
   }
 
-  loadCustomerByMobile(m?: string) {
+  async loadCustomerByMobile(m?: string) {
     if (!this.validateMobile(m) || !this.storeId) return;
-    getDoc(doc(this.firestore, this.customersColPath(), m!)).then(s => { if (s.exists()) this.checkoutCustomerName = s.data()['name'] || ''; });
+
+    let finalData: any = null;
+    const brandId = this.storeInfo?.ownerId || this.storeInfo?.adminUid;
+    const isGlobal = this.loyaltySettings?.isCrossStoreLoyaltyEnabled && brandId;
+
+    try {
+        const localSnap = await getDoc(doc(this.firestore, this.customersColPath(), m!));
+        const localData = localSnap.exists() ? localSnap.data() : null;
+
+        if (isGlobal) {
+            const globalSnap = await getDoc(doc(this.firestore, `BrandCustomers/${brandId}/customers`, m!));
+            if (globalSnap.exists()) {
+                finalData = globalSnap.data();
+            } else if (localData) {
+                finalData = localData;
+                setDoc(doc(this.firestore, `BrandCustomers/${brandId}/customers`, m!), localData, { merge: true });
+            }
+        } else {
+            finalData = localData;
+        }
+
+        if (finalData) {
+            this.checkoutCustomerName = finalData['name'] || '';
+            this.customerProfile = {
+                name: finalData['name'] || '',
+                mobile: m!,
+                loyaltyPoints: finalData['loyaltyPoints'] || 0,
+                lifetimeSpend: finalData['lifetimeSpend'] || 0,
+                visitCount: finalData['visitCount'] || 0,
+                tier: finalData['tier'] || 'Standard'
+            };
+        } else {
+            this.customerProfile = null;
+        }
+    } catch(e) {
+        console.error(e);
+    }
   }
 
   resumeDraft(ord: Order) {
@@ -511,7 +699,7 @@ export class PosComponent implements OnInit, OnDestroy {
   isVariationSelected(mid: string, lbl: string) { return this.modalSelectedModifiers[mid]?.[0]?.optionLabel === lbl; }
 
   async printCurrentInvoice(invoiceData?: any, orderToPrint?: Order) {
-    const d = orderToPrint || invoiceData || { items: this.cart, subtotal: this.getCartSubtotal(), tax: this.getCartTax(), discount: this.getCartDiscount(), total: this.getCartTotal() };
+    const d = orderToPrint || invoiceData || { items: this.cart, subtotal: this.getCartSubtotal(), tax: this.getCartTax(), discount: this.getCartDiscount() + this.loyaltyDiscount, total: this.getCartTotal() };
     if (!d.items?.length) return;
     const html = `<html><body onload="window.print(); window.close();"><h3 style="text-align:center">${this.storeInfo?.name || 'POS'}</h3><hr/>${d.items.map((i:any)=>`<div>${i.name} x${i.quantity} <span style="float:right">${i.subtotal.toFixed(2)}</span></div>`).join('')}<hr/><div>Total: ₹${d.total.toFixed(2)}</div></body></html>`;
     window.open('', '', 'height=600,width=400')?.document.write(html);

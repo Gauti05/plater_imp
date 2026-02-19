@@ -1,8 +1,9 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Firestore, collection, doc, setDoc, updateDoc, getDoc, getDocs } from '@angular/fire/firestore';
+import { Firestore, collection, doc, setDoc, updateDoc, getDoc, getDocs, query, where, documentId } from '@angular/fire/firestore';
 import { ActivatedRoute, Router } from '@angular/router';
+import { Auth, authState } from '@angular/fire/auth'; 
 
 interface Supplier {
   id?: string;
@@ -26,6 +27,7 @@ export class AddSupplierComponent implements OnInit {
   private firestore = inject(Firestore);
   private route = inject(ActivatedRoute);
   public router = inject(Router); 
+  private fireAuth = inject(Auth); 
 
   supplier: Supplier = {
     name: '',
@@ -39,6 +41,9 @@ export class AddSupplierComponent implements OnInit {
   isEditMode = false;
 
   storeSlug: string = '';
+  
+  publishToAll = false;
+  allStoreSlugs: string[] = [];
 
   async ngOnInit() {
     const root = this.route.snapshot.root;
@@ -47,7 +52,16 @@ export class AddSupplierComponent implements OnInit {
     const id = this.route.snapshot.paramMap.get('id');
     this.isEditMode = !!id;
 
-    // Fetch all raw materials
+    authState(this.fireAuth).subscribe(async (user) => {
+      if (user) {
+        const userDoc = await getDoc(doc(this.firestore, `Users/${user.uid}`));
+        const userData = userDoc.data();
+        if (userData) {
+          await this.loadAllStores(user.uid, userData['storeId'], userData['userRole']); 
+        }
+      }
+    });
+
     const rawCol = collection(this.firestore, `Stores/${this.storeSlug}/rawMaterials`);
     const rawSnap = await getDocs(rawCol);
 
@@ -60,7 +74,6 @@ export class AddSupplierComponent implements OnInit {
       })),
     ];
 
-    // Load supplier if editing
     if (id) {
       const docRef = doc(this.firestore, `Stores/${this.storeSlug}/suppliers/${id}`);
       const docSnap = await getDoc(docRef);
@@ -69,27 +82,40 @@ export class AddSupplierComponent implements OnInit {
       }
     }
     
-    // 🎯 FIX: Initially show only associated items (if any).
     this.filterItems(true); 
   }
 
-  async saveSupplier() {
-    const colRef = collection(this.firestore, `Stores/${this.storeSlug}/suppliers`);
-    let supplierId: string;
+  async loadAllStores(uid: string, assignedStoreId: string, role: string) {
+    const storesRef = collection(this.firestore, 'Stores');
+    if (role === 'Superadmin') {
+      const storesSnap = await getDocs(storesRef);
+      this.allStoreSlugs = storesSnap.docs.map(d => d.data()['slug'] || d.id);
+    } else {
+      const qAssigned = getDocs(query(storesRef, where(documentId(), '==', assignedStoreId || '')));
+      const qOwned = getDocs(query(storesRef, where('ownerId', '==', uid)));
+      const [snapAssigned, snapOwned] = await Promise.all([qAssigned, qOwned]);
+      const allDocs = [...snapAssigned.docs, ...snapOwned.docs];
+      this.allStoreSlugs = Array.from(new Set(allDocs.map(d => d.data()['slug'] || d.id)));
+    }
+  }
 
+  async saveSupplier() {
     try {
-      if (this.isEditMode && this.supplier.id) {
-        supplierId = this.supplier.id;
-        await updateDoc(doc(colRef, supplierId), this.supplier as any);
+      let supplierId = this.supplier.id || doc(collection(this.firestore, 'temp')).id;
+      this.supplier.id = supplierId;
+
+      if (this.publishToAll && this.allStoreSlugs.length > 0) {
+        const savePromises = this.allStoreSlugs.map(async (slug) => {
+          const colRef = collection(this.firestore, `Stores/${slug}/suppliers`);
+          return setDoc(doc(colRef, supplierId), this.supplier as any, { merge: true });
+        });
+        await Promise.all(savePromises);
       } else {
-        const newDocRef = doc(colRef);
-        supplierId = newDocRef.id;
-        await setDoc(newDocRef, { ...this.supplier, id: supplierId });
+        const colRef = collection(this.firestore, `Stores/${this.storeSlug}/suppliers`);
+        await setDoc(doc(colRef, supplierId), this.supplier as any, { merge: true });
       }
 
-      // Sync supplier association inside items (CRITICAL)
       await this.syncItems(supplierId);
-
       this.router.navigate([`/${this.storeSlug}/inventory/suppliers`]);
     } catch (e) {
       console.error('Error saving supplier:', e);
@@ -100,15 +126,11 @@ export class AddSupplierComponent implements OnInit {
     for (const item of this.items) {
       const colPath = item.type === 'Raw Material' ? 'rawMaterials' : 'menuItems';
       const itemRef = doc(this.firestore, `Stores/${this.storeSlug}/${colPath}/${item.id}`);
-      
       const isAssociated = this.supplier.associatedItems.includes(item.id);
       
       if (isAssociated) {
           await updateDoc(itemRef, { supplierId: supplierId });
       } else {
-          // If unassociated, explicitly remove the supplierId field.
-          // Note: This only works if the item was associated with THIS supplier.
-          // For simplicity, we remove supplierId if it's not in the array.
           await updateDoc(itemRef, { supplierId: null });
       }
     }
@@ -121,30 +143,16 @@ export class AddSupplierComponent implements OnInit {
     } else {
       this.supplier.associatedItems.push(itemId);
     }
-    // Update the displayed list immediately
     this.filterItems(); 
   }
 
-  /**
-   * Filters the item list. If no search term, it only shows selected items.
-   * If there is a search term, it shows matching items from the full list.
-   * @param initialLoad If true, just filters by selected items and clears search.
-   */
   filterItems(initialLoad: boolean = false) {
     const term = this.searchTerm.toLowerCase().trim();
-
     if (!term) {
-      // Logic: If no search term, only show items that are currently selected.
-      this.filteredItems = this.items.filter(item =>
-        this.supplier.associatedItems.includes(item.id!)
-      );
+      this.filteredItems = this.items.filter(item => this.supplier.associatedItems.includes(item.id!));
     } else {
-      // Logic: If searching, show any item that matches the search term.
-      this.filteredItems = this.items.filter(item =>
-        item.name.toLowerCase().includes(term) || item.type.toLowerCase().includes(term)
-      );
+      this.filteredItems = this.items.filter(item => item.name.toLowerCase().includes(term) || item.type.toLowerCase().includes(term));
     }
-    
     if (initialLoad) {
         this.searchTerm = '';
     }

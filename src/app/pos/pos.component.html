@@ -74,7 +74,7 @@
                 @for (item of filteredMenuItems; track item.id) {
                   <div class="menu-item-card"
                        [class.disabled]="item.trackInventory && item.totalServingsInInventory===0"
-                       (click)="addItemFromCard(item)">
+                       (click)="isBYOCombo(item) ? openBYOPanel(item) : addItemFromCard(item)">
 
                     <img [src]="item.imageUrl || 'https://placehold.co/400x300/f3f4f6/a1a1aa?text=No+Image'" class="menu-img" alt="{{item.name}}">
 
@@ -99,7 +99,8 @@
                       </div>
                       <div class="menu-meta">
                         <span class="text-muted">{{ item.category }}</span>
-                        <span class="menu-price">{{ item.price | currency:'INR' }}</span>
+                        <span class="menu-price" *ngIf="!isBYOCombo(item)">{{ item.price | currency:'INR' }}</span>
+                        <span class="menu-price" *ngIf="isBYOCombo(item)" style="font-size: 12px; color: var(--accent);">Build Combo ➔</span>
                       </div>
                     </div>
                   </div>
@@ -233,6 +234,12 @@
                 @if (item.modifiers?.length) {
                   <div class="ci-mods">{{ getCartItemModifierSummary(item) }}</div>
                 }
+                @if (item.recipe?.length && item.name.includes('Combo')) {
+                   <div class="ci-mods" style="margin-top: 4px; color: var(--accent);">
+                     Includes: <span *ngFor="let r of item.recipe; let last = last">{{ r.name }}<span *ngIf="!last">, </span></span>
+                   </div>
+                }
+
                 <div class="ci-item-price-detail">
                   {{ item.price | currency:'INR' }} 
                   @if (item.taxRate > 0) { <small>(+{{ item.taxRate }}% Tax)</small> }
@@ -375,6 +382,84 @@
     </div>
   }
 
+  @if (showBYOPanel && activeBYOGroup) {
+    <div class="backdrop" (click)="closeBYOPanel()"></div>
+    <div class="slide-panel right" [class.open]="showBYOPanel" style="width: 500px;">
+      <div class="panel-head">
+        <h3>Build Your {{ activeBYOGroup.name }}</h3>
+        <button class="btn ghost" (click)="closeBYOPanel()">✕</button>
+      </div>
+      
+      <div class="panel-body">
+        <div class="byo-header-card">
+          <h4>{{ activeBYOGroup.name }}</h4>
+          
+          <ng-container *ngIf="!activeBYOGroup.config?.byoMode || activeBYOGroup.config?.byoMode === 'simple'">
+              <p>Pick exactly <strong>{{ byoMaxSelection }}</strong> items.</p>
+              <div class="byo-progress">
+                 {{ byoSelectedItems.length }} / {{ byoMaxSelection }} Selected
+              </div>
+          </ng-container>
+
+          <ng-container *ngIf="activeBYOGroup.config?.byoMode === 'steps'">
+              <p style="color: var(--primary); font-weight: 600; margin-bottom: 4px;">
+                Step {{ byoCurrentStepIndex + 1 }} of {{ activeBYOGroup.config?.steps?.length }}
+              </p>
+              <p style="margin: 0 0 10px 0;">{{ activeBYOGroup.config?.steps[byoCurrentStepIndex]?.name }}</p>
+              <div class="byo-progress">
+                 {{ byoStepSelections[byoCurrentStepIndex].length || 0 }} / {{ activeBYOGroup.config?.steps[byoCurrentStepIndex]?.selectionCount || 1 }} Selected
+              </div>
+          </ng-container>
+        </div>
+
+        <div class="byo-grid mt-4">
+          @for (item of byoEligibleItems; track item.id) {
+            <div class="byo-item-card" 
+                 [class.selected]="isBYOItemSelected(item)"
+                 [class.disabled]="!isBYOItemSelected(item) && isBYOCurrentLimitReached()"
+                 (click)="toggleBYOItem(item)">
+              <div class="byo-img-wrapper">
+                <img [src]="item.imageUrl || 'https://placehold.co/100x100/f3f4f6/a1a1aa?text=Item'" alt="">
+                <div class="byo-check" *ngIf="isBYOItemSelected(item)">✓</div>
+              </div>
+              <div class="byo-info">
+                <strong>{{ item.name }}</strong>
+                <small *ngIf="item.price > 0">+{{ item.price | currency:'INR' }} upcharge</small>
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+
+      <div class="panel-foot" style="background: #f8fafc; border-top: 1px solid #cbd5e1; justify-content: space-between;">
+        <div>
+          <small style="display:block; color:var(--text-muted);">Combo Base Price</small>
+          <strong style="font-size: 18px; color: var(--primary);">{{ (activeBYOGroup.config?.comboPrice || 0) | currency:'INR' }}</strong>
+        </div>
+        
+        <div style="display:flex; gap:10px;">
+          <ng-container *ngIf="activeBYOGroup.config?.byoMode === 'steps'">
+             <button class="btn outline" *ngIf="byoCurrentStepIndex > 0" (click)="prevBYOStep()">Back</button>
+             <button class="btn primary" *ngIf="byoCurrentStepIndex < (activeBYOGroup.config?.steps?.length - 1)" 
+                     (click)="nextBYOStep()" 
+                     [disabled]="(byoStepSelections[byoCurrentStepIndex].length || 0) !== (activeBYOGroup.config?.steps[byoCurrentStepIndex]?.selectionCount || 1)">
+               Next Step
+             </button>
+          </ng-container>
+          
+          <button class="btn ghost" *ngIf="!activeBYOGroup.config?.byoMode || activeBYOGroup.config?.byoMode === 'simple'" (click)="closeBYOPanel()">Cancel</button>
+
+          <button class="btn success" 
+                  *ngIf="(!activeBYOGroup.config?.byoMode || activeBYOGroup.config?.byoMode === 'simple') || (activeBYOGroup.config?.byoMode === 'steps' && byoCurrentStepIndex === activeBYOGroup.config?.steps?.length - 1)"
+                  [disabled]="!isBYOComboValid()" 
+                  (click)="addBYOComboToCart()">
+             Add Combo
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
   @if (showCheckoutPanel) {
     <div class="backdrop" (click)="closeCheckoutPanel()"></div>
     <div class="slide-panel right" [class.open]="showCheckoutPanel">
@@ -426,6 +511,36 @@
         <hr style="border:0; border-top:1px dashed var(--border); margin:20px 0;">
 
         <div class="form-group">
+          <label>Promo Code</label>
+          @if (!appliedPromo) {
+            <div style="display:flex; gap:10px;">
+              <input type="text" [(ngModel)]="promoCodeInput" placeholder="Enter code (e.g., WELCOME50)" style="flex:1; text-transform: uppercase;">
+              <button class="btn outline" (click)="applyPromoCode()" [disabled]="isApplyingPromo || !promoCodeInput">Apply</button>
+            </div>
+            @if (promoError) { <small class="text-danger mt-1" style="display:block">{{ promoError }}</small> }
+          } @else {
+            <div class="loyalty-mini-card" style="background: #e0f2fe; border-color: #bae6fd; display: flex; justify-content: space-between; align-items: center; padding: 12px; border-radius: 8px;">
+              <div>
+                <strong style="color: #0369a1;">{{ appliedPromo.code }} Applied!</strong>
+                <div style="font-size: 12px; color: #0284c7;">{{ appliedPromo.type === 'Percentage' ? appliedPromo.value + '% OFF' : (appliedPromo.value | currency:'INR') + ' OFF' }}</div>
+              </div>
+              <button class="btn ghost small text-danger" (click)="removePromoCode()">Remove</button>
+            </div>
+          }
+        </div>
+
+        <div class="form-group">
+          <label>Manual Discount</label>
+          <div style="display:flex; gap:10px;">
+            <select [(ngModel)]="discountType" (change)="recalculateDiscount()" style="width:70px;" [disabled]="!!appliedPromo">
+              <option value="percentage">%</option>
+              <option value="flat">₹</option>
+            </select>
+            <input type="number" [(ngModel)]="discountAmount" (input)="recalculateDiscount()" style="flex:1" [disabled]="!!appliedPromo">
+          </div>
+        </div>
+
+        <div class="form-group mt-4">
           <label>Payment Method</label>
           <div class="payment-grid">
             <div class="pay-opt" [class.selected]="checkoutPayment==='CASH'" (click)="checkoutPayment='CASH'">💵 Cash</div>
@@ -436,17 +551,6 @@
           @if (checkoutPayment === 'OTHER') {
             <input type="text" [(ngModel)]="checkoutPaymentOther" placeholder="Specify..." style="width:100%; margin-top:8px;">
           }
-        </div>
-
-        <div class="form-group">
-          <label>Discount</label>
-          <div style="display:flex; gap:10px;">
-            <select [(ngModel)]="discountType" (change)="recalculateDiscount()" style="width:70px;">
-              <option value="percentage">%</option>
-              <option value="flat">₹</option>
-            </select>
-            <input type="number" [(ngModel)]="discountAmount" (input)="recalculateDiscount()" style="flex:1">
-          </div>
         </div>
 
         <div class="cart-summary-final mt-4">

@@ -34,6 +34,8 @@ import { AddStockAdjustmentComponent } from './stock-adjustments/add-stock-adjus
 import { InventoryReportsComponent } from './reports/inventory-reports/inventory-reports.component';
 import { BulkUploadMenuComponent } from './bulk-upload-menu/bulk-upload-menu.component';
 
+
+import { ItemGroupListComponent } from './item-groups/item-group-list.component'; // ⭐ NEW
 export const INVENTORY_ROUTES: Routes = [
   {
     path: '',
@@ -74,6 +76,7 @@ export const INVENTORY_ROUTES: Routes = [
       { path: 'bulk-upload-menu', component: BulkUploadMenuComponent, data: { title: 'Bulk Upload' } },
       // Reports
       { path: 'reports', component: InventoryReportsComponent, data: { title: 'Inventory Reports' } },
+      { path: 'item-groups', component: ItemGroupListComponent }
     ]
   }
 ];

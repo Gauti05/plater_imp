@@ -1,23 +1,8 @@
-// import { Component, ViewEncapsulation } from '@angular/core';
-// import { CommonModule } from '@angular/common';
-// import { RouterLink, RouterOutlet, RouterLinkActive } from '@angular/router';
-
-// @Component({
-//   selector: 'app-inventory',
-//   standalone: true,
-//   imports: [CommonModule, RouterLink, RouterOutlet, RouterLinkActive],
-//   templateUrl: './inventory.component.html',
-//   styleUrls: ['./inventory.component.css'],
-//   encapsulation: ViewEncapsulation.None
-// })
-// export class InventoryComponent { }
-
-
-import { Component, ViewEncapsulation, OnInit, inject } from '@angular/core';
+import { Component, ViewEncapsulation, OnInit, inject, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink, RouterOutlet, RouterLinkActive } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-import { Firestore, collection, getDocs, query, where, doc, getDoc, documentId } from '@angular/fire/firestore';
+import { Firestore, collection, getDocs, query, where, doc, getDoc, documentId, onSnapshot } from '@angular/fire/firestore';
 import { Auth, authState } from '@angular/fire/auth'; 
 
 interface GlobalStock {
@@ -25,6 +10,22 @@ interface GlobalStock {
   stock: number;
   unit: string;
   costPerUnit: number;
+}
+
+// ⭐ NEW: Item Group Architecture
+export interface ItemGroup {
+  id?: string;
+  name: string;
+  type: 'Basic' | 'Smart' | 'Time-Based' | 'Diet' | 'Fixed-Combo' | 'BYO-Combo' | 'Conditional' | 'QR-Driven';
+  itemIds: string[];
+  isActive: boolean;
+  config?: {
+    startTime?: string; // For Time-Based
+    endTime?: string;
+    dietType?: 'Veg' | 'Non-Veg' | 'Vegan'; // For Diet Groups
+    minItems?: number; // For BYO Combos
+    comboPrice?: number;
+  };
 }
 
 @Component({
@@ -35,18 +36,21 @@ interface GlobalStock {
   styleUrls: ['./inventory.component.css'],
   encapsulation: ViewEncapsulation.None
 })
-export class InventoryComponent implements OnInit {
+export class InventoryComponent implements OnInit, OnDestroy {
   private firestore = inject(Firestore);
   private fireAuth = inject(Auth); 
+  private cdr = inject(ChangeDetectorRef);
 
   stores: { slug: string, name: string }[] = [];
   allMaterialsRaw: any[] = []; 
   uniqueMaterialNames: string[] = [];
+  itemGroups: ItemGroup[] = []; // ⭐ NEW
 
   selectedMaterial = '';
   globalStockResults: GlobalStock[] = [];
   isLoadingGlobal = false;
   showGlobalSearch = false; 
+  private groupSub: any;
 
   async ngOnInit() {
     authState(this.fireAuth).subscribe(async (user) => {
@@ -56,7 +60,10 @@ export class InventoryComponent implements OnInit {
     });
   }
 
-  // ⭐ FIXED: Now fetches your Master branch AND all your newly created outlets
+  ngOnDestroy() {
+    if (this.groupSub) this.groupSub();
+  }
+
   async loadMyStores(uid: string) {
     const userDocSnap = await getDoc(doc(this.firestore, `Users/${uid}`));
     if (!userDocSnap.exists()) return;
@@ -64,7 +71,6 @@ export class InventoryComponent implements OnInit {
     const userData = userDocSnap.data();
     const role = userData['userRole'];
     const assignedStoreId = userData['storeId'];
-
     const storesRef = collection(this.firestore, 'Stores');
 
     if (role === 'Superadmin') {
@@ -74,26 +80,31 @@ export class InventoryComponent implements OnInit {
         name: d.data()['name'] || d.id 
       }));
     } else {
-      // Run two queries to avoid index errors and get ALL your stores
       const qAssigned = getDocs(query(storesRef, where(documentId(), '==', assignedStoreId || '')));
       const qOwned = getDocs(query(storesRef, where('ownerId', '==', uid)));
-
       const [snapAssigned, snapOwned] = await Promise.all([qAssigned, qOwned]);
-      
       const allDocs = [...snapAssigned.docs, ...snapOwned.docs];
-      
-      // Combine results and format them for the global search dropdown
       const uniqueData = Array.from(new Set(allDocs.map(d => d.id)))
         .map(id => {
           const d = allDocs.find(doc => doc.id === id);
-          return { 
-            slug: d?.data()['slug'] || id, 
-            name: d?.data()['name'] || id 
-          };
+          return { slug: d?.data()['slug'] || id, name: d?.data()['name'] || id };
         });
-
       this.stores = uniqueData;
     }
+    
+    // ⭐ Start listening to Item Groups for the first store
+    if (this.stores.length > 0) {
+      this.loadItemGroups(this.stores[0].slug);
+    }
+  }
+
+  // ⭐ NEW: Real-time Item Group Listener
+  loadItemGroups(storeSlug: string) {
+    const groupRef = collection(this.firestore, `Stores/${storeSlug}/itemGroups`);
+    this.groupSub = onSnapshot(groupRef, (snap) => {
+      this.itemGroups = snap.docs.map(d => ({ id: d.id, ...d.data() } as ItemGroup));
+      this.cdr.detectChanges();
+    });
   }
 
   async toggleGlobalSearch() {
@@ -106,8 +117,6 @@ export class InventoryComponent implements OnInit {
   private async fetchAllMaterials() {
     this.isLoadingGlobal = true;
     this.allMaterialsRaw = [];
-    
-    // ⭐ Now queries every single store found in the updated loadMyStores
     const promises = this.stores.map(async store => {
       const snap = await getDocs(collection(this.firestore, `Stores/${store.slug}/rawMaterials`));
       snap.docs.forEach(d => {
@@ -120,9 +129,7 @@ export class InventoryComponent implements OnInit {
         });
       });
     });
-    
     await Promise.all(promises);
-
     const names = this.allMaterialsRaw.map(m => m.name);
     this.uniqueMaterialNames = Array.from(new Set(names)).sort();
     this.isLoadingGlobal = false;
@@ -133,7 +140,6 @@ export class InventoryComponent implements OnInit {
       this.globalStockResults = [];
       return;
     }
-    
     this.globalStockResults = this.stores.map(store => {
       const match = this.allMaterialsRaw.find(m => m.storeName === store.name && m.name === this.selectedMaterial);
       return match 

@@ -1,0 +1,52 @@
+<div class="feedback-container">
+  <div class="feedback-card">
+    
+    <div *ngIf="!isSubmitted">
+      <div class="header-section">
+        <h2>Rate your experience</h2>
+        <p>How did we do today at <strong>{{ storeName }}</strong>?</p>
+      </div>
+
+      <div class="stars-container" (mouseleave)="setHover(0)">
+        <span class="star" 
+              *ngFor="let star of [1,2,3,4,5]" 
+              (mouseover)="setHover(star)" 
+              (click)="setRating(star)"
+              [class.active]="star <= (hoverRating || rating)">
+          ★
+        </span>
+      </div>
+      <div class="rating-text" *ngIf="rating > 0">
+        {{ rating === 5 ? 'Excellent!' : rating === 4 ? 'Good' : rating === 3 ? 'Average' : rating === 2 ? 'Poor' : 'Terrible' }}
+      </div>
+
+      <div class="form-group">
+        <label>Tell us more (Optional)</label>
+        <textarea [(ngModel)]="comments" placeholder="What did you love? What can we improve?" rows="4"></textarea>
+      </div>
+
+      <div class="form-group">
+        <label>Mobile Number <span class="req">*</span></label>
+        <input type="text" [(ngModel)]="customerMobile" placeholder="Used to send your rewards" maxlength="15">
+      </div>
+
+      <button class="submit-btn" (click)="submitFeedback()" [disabled]="rating === 0 || !customerMobile">
+        Submit Feedback
+      </button>
+    </div>
+
+    <div *ngIf="isSubmitted" class="success-screen">
+      <div class="success-icon">✓</div>
+      <h2>Thank You!</h2>
+      <p>Your feedback has been sent directly to the manager.</p>
+
+      <div *ngIf="generatedPromo" class="reward-box">
+        <div class="reward-sparkles">✨ You earned a reward! ✨</div>
+        <p class="reward-msg">{{ promoMessage }}</p>
+        <div class="promo-code-display">{{ generatedPromo }}</div>
+        <small>Take a screenshot and show this on your next visit!</small>
+      </div>
+    </div>
+
+  </div>
+</div>

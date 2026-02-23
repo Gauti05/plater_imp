@@ -1,0 +1,167 @@
+<div class="item-groups-container">
+  <div class="table-header">
+    <div>
+      <h3>Item Groups & Combos</h3>
+      <p class="text-muted">Manage categories, time-based menus, and combo deals.</p>
+    </div>
+    <button class="btn primary" (click)="openCreateModal()">
+      <span class="material-icons" style="font-size: 18px; margin-right: 5px;">add</span> Create New Group
+    </button>
+  </div>
+
+  <div class="groups-grid">
+    <div *ngFor="let group of itemGroups" class="group-summary-card">
+      <div class="group-badge">{{ group.type }}</div>
+      <h4>{{ group.name }}</h4>
+      <p class="text-muted">{{ group.type === 'Smart' || group.type === 'Diet' ? 'Auto-generated items' : group.itemIds.length + ' Items included' }}</p>
+      
+      <div class="group-actions">
+        <button class="btn ghost small" (click)="openCreateModal(group)">Edit</button>
+        <button class="btn ghost small text-danger" (click)="deleteGroup(group.id!)">Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" *ngIf="showModal">
+    <div class="modal-content large">
+      <div class="modal-header">
+        <h3>{{ editingGroup.id ? 'Edit' : 'Create' }} Item Group</h3>
+        <button class="close-btn" (click)="showModal = false">✕</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="form-row">
+          <div class="field-wrap">
+            <label>Group Name</label>
+            <input type="text" [(ngModel)]="editingGroup.name" placeholder="e.g. Pure Veg Delights">
+          </div>
+          <div class="field-wrap">
+            <label>Group Type</label>
+            <select [(ngModel)]="editingGroup.type">
+              <option *ngFor="let t of groupTypes" [value]="t.id">{{ t.label }}</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="config-panel" *ngIf="editingGroup.type === 'Time-Based'">
+          <label style="display: block; margin-bottom: 10px; font-weight: 700;">Visibility Hours</label>
+          <div style="display: flex; gap: 15px; align-items: center;">
+            <input type="time" [(ngModel)]="editingGroup.config.startTime" style="padding: 10px; border-radius: 8px; border: 1px solid #cbd5e1;">
+            <span>to</span>
+            <input type="time" [(ngModel)]="editingGroup.config.endTime" style="padding: 10px; border-radius: 8px; border: 1px solid #cbd5e1;">
+          </div>
+        </div>
+
+        <div class="config-panel" *ngIf="editingGroup.type === 'Diet'">
+          <label style="display: block; margin-bottom: 10px; font-weight: 700;">Select Diet Preference</label>
+          <select [(ngModel)]="editingGroup.config.dietType" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #cbd5e1;">
+            <option value="veg">Pure Veg</option>
+            <option value="non-veg">Non-Veg</option>
+          </select>
+          <p class="text-muted" style="margin-top: 10px; font-size: 12px;">This group will automatically pull items matching this diet type.</p>
+        </div>
+
+        <div class="config-panel" *ngIf="editingGroup.type === 'BYO-Combo'">
+          <label style="display: block; margin-bottom: 10px; font-weight: 700;">Combo Settings</label>
+          
+          <div style="margin-bottom: 15px;">
+             <label style="font-size: 12px; color: var(--text-muted); display: block; margin-bottom: 4px;">Upload Combo Image</label>
+             <div style="display: flex; align-items: center; gap: 15px;">
+                <img *ngIf="editingGroup.imageUrl" [src]="editingGroup.imageUrl" style="width: 50px; height: 50px; object-fit: cover; border-radius: 8px; border: 1px solid #cbd5e1;">
+                <div style="flex: 1;">
+                   <input type="file" accept="image/*" (change)="uploadComboImage($event)" style="padding: 6px; border-radius: 8px; border: 1px solid #cbd5e1; width: 100%; background: #fff; font-size: 13px;">
+                   <div *ngIf="isUploadingImage" style="font-size: 12px; color: var(--primary); margin-top: 4px; font-weight: 700;">Uploading... Please wait.</div>
+                </div>
+             </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; align-items: center; margin-bottom: 15px;">
+             <div>
+                <label style="font-size: 12px; color: var(--text-muted); display: block; margin-bottom: 4px;">Combo Base Price (₹)</label>
+                <input type="number" [(ngModel)]="editingGroup.config.comboPrice" placeholder="e.g. 299" style="padding: 10px; border-radius: 8px; border: 1px solid #cbd5e1; width: 100%;">
+             </div>
+             <div>
+                <label style="font-size: 12px; color: var(--text-muted); display: block; margin-bottom: 4px;">Builder Mode</label>
+                <select [(ngModel)]="editingGroup.config.byoMode" style="padding: 10px; border-radius: 8px; border: 1px solid #cbd5e1; width: 100%;">
+                   <option value="simple">Simple (Pick X total items)</option>
+                   <option value="steps">Step-by-Step (e.g., Pick Burger, then Drink)</option>
+                </select>
+             </div>
+          </div>
+
+          <div *ngIf="!editingGroup.config.byoMode || editingGroup.config.byoMode === 'simple'" style="background: var(--bg-main); padding: 12px; border-radius: 8px; border: 1px dashed var(--border);">
+             <div style="display: flex; gap: 15px; align-items: center;">
+                 <div style="flex: 1;">
+                    <label style="font-size: 12px; color: var(--text-muted); display: block; margin-bottom: 4px;">How many items can they pick?</label>
+                    <input type="number" [(ngModel)]="editingGroup.config.selectionCount" placeholder="e.g. 3" style="padding: 10px; border-radius: 8px; border: 1px solid #cbd5e1; width: 100%;">
+                 </div>
+                 <div style="flex: 1; display: flex; align-items: center; gap: 8px; margin-top: 18px;">
+                    <input type="checkbox" [(ngModel)]="editingGroup.config.allowEntireMenu" id="entireMenuToggle" style="width: 18px; height: 18px; cursor: pointer;">
+                    <label for="entireMenuToggle" style="font-size: 13px; font-weight: 600; cursor: pointer; margin: 0; color: var(--primary);">Allow Entire Menu</label>
+                 </div>
+             </div>
+             <p *ngIf="editingGroup.config.allowEntireMenu" class="text-muted" style="margin-top: 10px; font-size: 11px;">The manual selection list below is hidden because the cashier can now choose any item.</p>
+          </div>
+
+          <div *ngIf="editingGroup.config.byoMode === 'steps'">
+             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                <strong style="font-size: 14px; color: var(--primary);">Combo Steps</strong>
+                <button class="btn outline small" (click)="addBYOStep()" style="padding: 6px 12px; font-size: 12px; border-radius: 6px;">+ Add Step</button>
+             </div>
+
+             <div *ngFor="let step of editingGroup.config.steps; let i = index" style="background: var(--bg-main); padding: 14px; border-radius: 8px; border: 1px solid var(--border); margin-bottom: 10px;">
+                <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 10px;">
+                   <div style="flex: 2;">
+                      <label style="font-size: 11px; color: var(--text-muted);">Step Name</label>
+                      <input type="text" [(ngModel)]="step.name" placeholder="e.g. Choose a Burger" style="height: 36px;">
+                   </div>
+                   <div style="flex: 1;">
+                      <label style="font-size: 11px; color: var(--text-muted);">Pick Count</label>
+                      <input type="number" [(ngModel)]="step.selectionCount" placeholder="1" style="height: 36px;">
+                   </div>
+                   <button class="btn ghost text-danger" (click)="removeBYOStep(i)" style="margin-top: 18px; padding: 6px;">✕</button>
+                </div>
+
+                <label style="font-size: 11px; color: var(--text-muted);">Select Eligible Items for this step</label>
+                <div style="max-height: 140px; overflow-y: auto; border: 1px solid var(--border); border-radius: 6px; background: #fff;">
+                   <div *ngFor="let item of menuItems" 
+                        style="padding: 6px 10px; font-size: 13px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; border-bottom: 1px solid #f1f5f9;"
+                        [style.background]="step.itemIds.includes(item.id) ? 'var(--primary-light)' : 'transparent'"
+                        (click)="toggleBYOStepItem(i, item.id)">
+                      <span>{{ item.name }}</span>
+                      <span *ngIf="step.itemIds.includes(item.id)" class="text-primary" style="font-weight: bold;">✓</span>
+                   </div>
+                </div>
+             </div>
+             <p *ngIf="!editingGroup.config.steps || editingGroup.config.steps.length === 0" class="text-muted" style="font-size: 12px; text-align: center; padding: 10px;">Click '+ Add Step' to start building your combo flow.</p>
+          </div>
+        </div>
+
+        <div class="selection-engine" *ngIf="showDefaultSelectionEngine()">
+          <label>Select Menu Items ({{ editingGroup.itemIds.length }} selected)</label>
+          <div class="selection-grid">
+            <div class="search-box">
+              <input type="text" #itemSearch placeholder="Search items in your menu...">
+            </div>
+            <div class="scroll-list">
+              <div *ngFor="let item of menuItems" 
+                   class="selectable-row"
+                   [class.selected]="editingGroup.itemIds.includes(item.id)"
+                   (click)="toggleItemSelection(item.id)">
+                <span>{{ item.name }}</span>
+                <span class="material-icons" style="font-size: 18px;">
+                  {{ editingGroup.itemIds.includes(item.id) ? 'check_circle' : 'add_circle_outline' }}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn ghost" (click)="showModal = false" [disabled]="isUploadingImage">Cancel</button>
+        <button class="btn primary" (click)="saveGroup()" style="padding: 10px 25px;" [disabled]="isUploadingImage">Save Item Group</button>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,85 @@
+<div class="qr-mobile-app">
+  
+  <header class="qr-header">
+    <h2>{{ storeName }}</h2>
+    <div *ngIf="tableNumber" class="table-badge">Table {{ tableNumber }}</div>
+  </header>
+
+  <div *ngIf="isLoading" style="padding: 40px 20px; text-align: center; color: #64748b;">
+    Loading menu...
+  </div>
+
+  <div *ngIf="errorMessage" style="padding: 40px 20px; text-align: center; color: #ef4444; font-weight: 500;">
+    {{ errorMessage }}
+  </div>
+
+  <ng-container *ngIf="!isLoading && !errorMessage">
+    <div class="category-scroll">
+      <button *ngFor="let cat of categories" 
+              class="cat-pill" 
+              [class.active]="activeCategory === cat"
+              (click)="filterCategory(cat)">
+        {{ cat }}
+      </button>
+    </div>
+
+    <div class="menu-list">
+      <div class="menu-card" *ngFor="let item of filteredMenu">
+        <div class="item-info">
+          <div class="item-title">
+            <span class="diet-icon" [ngClass]="getDietType(item)"></span>
+            {{ item.name }}
+          </div>
+          <div class="item-desc text-muted" *ngIf="item.description">{{ item.description }}</div>
+          <div class="item-price">{{ item.price | currency:'INR':'symbol' }}</div>
+        </div>
+        
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 8px;">
+          <div class="item-image-container">
+            <img [src]="item.imageUrl || 'https://placehold.co/100x100/f3f4f6/a1a1aa?text=Img'" alt="{{ item.name }}" class="item-img">
+          </div>
+          
+          <div class="add-btn-wrapper">
+            <button *ngIf="getItemQuantity(item) === 0" class="btn-add-init" (click)="addToCart(item)">ADD</button>
+            <div *ngIf="getItemQuantity(item) > 0" class="qty-selector">
+              <button class="qty-btn" (click)="removeFromCart(item)">-</button>
+              <span class="qty-num">{{ getItemQuantity(item) }}</span>
+              <button class="qty-btn" (click)="addToCart(item)">+</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </ng-container>
+
+  <div class="offer-backdrop" *ngIf="showOfferPopup && triggeredPromo">
+    <div class="offer-modal">
+      <button class="close-btn" (click)="closeOffer()">✕</button>
+      <div class="offer-icon">🎉</div>
+      <h3>Exclusive Table Offer!</h3>
+      <p>Because you're dining with us today, enjoy a special discount on your order.</p>
+      
+      <div class="promo-code-box">
+        <span class="code-text">{{ triggeredPromo.code }}</span>
+      </div>
+      
+      <p class="discount-text">
+        Get <strong>{{ triggeredPromo.type === 'Percentage' ? triggeredPromo.value + '%' : (triggeredPromo.value | currency:'INR':'symbol') }} OFF</strong> your final bill!
+      </p>
+      
+      <button class="btn-claim" (click)="closeOffer()">Claim & View Menu</button>
+      <small class="text-muted">Show this code to your waiter when paying.</small>
+    </div>
+  </div>
+
+  <div class="floating-cart" *ngIf="cart.length > 0">
+    <div class="cart-info">
+      <span class="cart-items">{{ cartItemCount }} {{ cartItemCount === 1 ? 'Item' : 'Items' }}</span>
+      <span class="cart-total">{{ cartTotal | currency:'INR':'symbol' }}</span>
+    </div>
+    <button class="btn-place-order" (click)="placeOrder()" [disabled]="isPlacingOrder">
+      {{ isPlacingOrder ? 'Sending...' : 'Send to Kitchen ➔' }}
+    </button>
+  </div>
+
+</div>

@@ -6,8 +6,8 @@
       <p class="subtitle">Manage campaigns, track ROI, and engage customers.</p>
     </div>
     <div class="action-buttons">
-      <button class="btn btn-outline">Generate Promo Code</button>
-      <button class="btn btn-primary">➕ Create New Campaign</button>
+      <button class="btn btn-outline" (click)="openPromoModal()">Generate Promo Code</button>
+      <button class="btn btn-primary" (click)="openCampaignModal()">➕ Create New Campaign</button>
     </div>
   </div>
 
@@ -38,7 +38,43 @@
   <div class="dashboard-grid">
     
     <div class="main-column">
-      <div class="card panel">
+      <div class="card panel ai-advisor-card mb-4">
+        <div class="panel-header">
+          <h3>✨ AI Smart Advisor</h3>
+          <span class="badge" style="background: #8b5cf6; color: white;">Data-Driven</span>
+        </div>
+        
+        <div style="padding: 16px;" *ngIf="aiSuggestion">
+          <h4 class="ai-title">{{ aiSuggestion.title }}</h4>
+          <p class="ai-desc">{{ aiSuggestion.description }}</p>
+          <button class="btn btn-primary" style="background: #8b5cf6; border: none; font-weight: bold;" (click)="applyAiSuggestion()">
+            ⚡ {{ aiSuggestion.actionText }}
+          </button>
+        </div>
+      </div>
+
+      <div class="card panel mb-4" style="border-top: 4px solid #3b82f6;">
+        <div class="panel-header">
+          <h3>🚀 Marketing Autopilot</h3>
+          <span class="badge scheduled">Set & Forget</span>
+        </div>
+        <div class="automation-list">
+          <div class="automation-item" *ngFor="let auto of automations">
+            <div class="auto-info">
+              <strong>{{ auto.trigger }}</strong>
+              <p class="text-muted small">{{ auto.action }}</p>
+            </div>
+            <div class="auto-action">
+              <label class="switch">
+                <input type="checkbox" [checked]="auto.isEnabled" (change)="toggleAutomation(auto)">
+                <span class="slider round"></span>
+              </label>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card panel mb-4">
         <div class="panel-header">
           <h3>Recent Campaigns</h3>
           <span class="view-all">View All</span>
@@ -49,20 +85,19 @@
               <th>Campaign Name</th>
               <th>Channel</th>
               <th>Status</th>
-              <th>Conversion ROI</th>
-              <th>Revenue Generated</th>
+              <th>Conversions</th> 
+              <th>Revenue & ROI</th> 
             </tr>
           </thead>
           <tbody>
             <tr *ngFor="let camp of campaigns">
               <td>
                 <strong>{{ camp.name }}</strong><br>
-                <small class="text-muted">Target: {{ camp.audienceSize | number }} guests</small>
+                <small class="text-muted">Target: {{ camp.audienceSize | number }} guests</small><br>
+                <small *ngIf="camp.linkedPromo" style="color: #3b82f6; font-weight: 500;">🎟️ Promo: {{ camp.linkedPromo }}</small>
               </td>
               <td><span class="channel-tag">{{ camp.channel }}</span></td>
-              <td>
-                <span class="badge" [ngClass]="camp.status.toLowerCase()">{{ camp.status }}</span>
-              </td>
+              <td><span class="badge" [ngClass]="camp.status.toLowerCase()">{{ camp.status }}</span></td>
               <td>
                 <div class="progress-wrapper">
                   <div class="progress-info">
@@ -74,54 +109,145 @@
                   </div>
                 </div>
               </td>
-              <td class="fw-bold text-success">{{ camp.revenueGenerated | currency:'INR':'symbol' }}</td>
+              <td>
+                <div class="fw-bold text-success">{{ camp.revenueGenerated | currency:'INR':'symbol' }}</div>
+                <small style="font-weight: 600;" [ngClass]="getFinancialROI(camp) >= 0 ? 'text-success' : 'text-danger'">
+                  {{ getFinancialROI(camp) >= 0 ? '↑' : '↓' }} ROI: {{ getFinancialROI(camp) | number:'1.0-1' }}%
+                </small>
+              </td>
             </tr>
           </tbody>
         </table>
       </div>
+
+      <div class="card panel" style="border-top: 4px solid #fbbf24;">
+        <div class="panel-header">
+          <h3>Recent Customer Feedback</h3>
+          <span class="badge" style="background: #fef3c7; color: #d97706;">Live Stream</span>
+        </div>
+        <div class="feedback-grid-pos">
+          <div *ngIf="feedbacks.length === 0" class="text-muted" style="text-align: center; padding: 40px;">No feedback received yet.</div>
+          <div class="feedback-row" *ngFor="let fb of feedbacks">
+            <div class="fb-user-info">
+              <div class="fb-rating">
+                <span *ngFor="let s of [1,2,3,4,5]" [style.color]="s <= fb.rating ? '#fbbf24' : '#e2e8f0'">★</span>
+              </div>
+              <strong>{{ fb.customerMobile }}</strong>
+              <small class="text-muted ms-auto">{{ fb.createdAt?.toDate() | date:'medium' }}</small>
+            </div>
+            <div class="fb-content"><p>"{{ fb.comments || 'No comments provided' }}"</p></div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <div class="side-column">
-      
       <div class="card panel mb-4">
-        <div class="panel-header">
-          <h3>Customer Segments</h3>
-        </div>
+        <div class="panel-header"><h3>Live CRM Segments</h3></div>
         <div class="segment-list">
           <div class="segment-item" *ngFor="let seg of segments">
             <div class="seg-info">
               <span class="dot" [ngClass]="seg.color"></span>
-              <span>{{ seg.name }}</span>
+              <div style="display: flex; flex-direction: column;">
+                <span>{{ seg.name }}</span>
+                <small class="text-muted" style="font-size: 10px;">{{ seg.description }}</small>
+              </div>
             </div>
             <span class="seg-count">{{ seg.count | number }}</span>
           </div>
         </div>
-        <button class="btn btn-block btn-outline mt-3">Run Segment Report</button>
       </div>
 
       <div class="card panel">
-        <div class="panel-header">
-          <h3>Active Promo Codes</h3>
-        </div>
+        <div class="panel-header"><h3>Active Promo Codes</h3></div>
         <div class="promo-list">
+          <div *ngIf="promoCodes.length === 0" class="text-muted" style="text-align: center; padding: 20px 0; font-size: 13px;">No promo codes yet.</div>
           <div class="promo-card" *ngFor="let promo of promoCodes" [class.expired]="promo.status === 'Expired'">
             <div class="promo-header">
               <span class="promo-code">{{ promo.code }}</span>
               <span class="badge" [ngClass]="promo.status.toLowerCase()">{{ promo.status }}</span>
             </div>
-            <p class="promo-desc">
-              {{ promo.type === 'Flat' ? (promo.value | currency:'INR':'symbol') : promo.value + '%' }} OFF
-            </p>
+            <p class="promo-desc">{{ promo.type === 'Flat' ? (promo.value | currency:'INR':'symbol') : promo.value + '%' }} OFF</p>
             <div class="promo-stats">
-              <small>Used: {{ promo.uses }}/{{ promo.maxUses }}</small>
-              <button class="toggle-btn" (click)="togglePromoStatus(promo)">
-                {{ promo.status === 'Active' ? 'Deactivate' : 'Activate' }}
-              </button>
+              <small class="text-muted">Used: {{ promo.uses }}/{{ promo.maxUses }}</small>
+              <button class="toggle-btn" (click)="togglePromoStatus(promo)">{{ promo.status === 'Active' ? 'Deactivate' : 'Activate' }}</button>
             </div>
           </div>
         </div>
       </div>
+    </div>
+  </div>
 
+  <div class="modal-backdrop" *ngIf="showCampaignModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Create New Campaign</h3>
+        <button class="close-btn" (click)="closeCampaignModal()">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="field-wrap">
+          <label>Campaign Name</label>
+          <input type="text" class="form-control" [(ngModel)]="newCampaign.name">
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+          <div class="field-wrap">
+            <label>Target Audience</label>
+            <select class="form-control" [(ngModel)]="newCampaign.segment">
+              <option *ngFor="let seg of segments" [value]="seg.name">{{ seg.name }} ({{ seg.count }})</option>
+            </select>
+          </div>
+          <div class="field-wrap">
+            <label>Broadcast Channel</label>
+            <select class="form-control" [(ngModel)]="newCampaign.channel">
+              <option value="SMS">SMS</option><option value="Email">Email</option><option value="Push App">Push</option>
+            </select>
+          </div>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; background: var(--border-light); padding: 12px; border-radius: 8px;">
+          <div class="field-wrap">
+            <label>Link Promo</label>
+            <select class="form-control" [(ngModel)]="newCampaign.linkedPromo">
+              <option value="">-- No Promo --</option>
+              <option *ngFor="let promo of promoCodes" [value]="promo.code">{{ promo.code }}</option>
+            </select>
+          </div>
+          <div class="field-wrap">
+            <label>Budget (₹)</label>
+            <input type="number" class="form-control" [(ngModel)]="newCampaign.budgetSpent">
+          </div>
+        </div>
+        <div *ngIf="ownedStores.length > 1" class="automation-item" style="border-color: var(--primary);">
+          <div class="auto-info"><strong>🌐 Deploy to All Stores</strong></div>
+          <div class="auto-action"><label class="switch"><input type="checkbox" [(ngModel)]="newCampaign.applyToAllStores"><span class="slider round"></span></label></div>
+        </div>
+        <div class="field-wrap">
+          <textarea class="form-control" rows="4" [(ngModel)]="newCampaign.message" placeholder="Message content..."></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" (click)="closeCampaignModal()">Cancel</button>
+        <button class="btn btn-primary" (click)="saveCampaign()">Schedule</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" *ngIf="showPromoModal">
+    <div class="modal-content">
+      <div class="modal-header"><h3>Generate Promo</h3><button class="close-btn" (click)="closePromoModal()">×</button></div>
+      <div class="modal-body">
+        <div class="field-wrap"><label>Code</label><input type="text" class="form-control" [(ngModel)]="newPromo.code" style="text-transform: uppercase;"></div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+          <div class="field-wrap">
+            <label>Type</label><select class="form-control" [(ngModel)]="newPromo.type"><option value="Percentage">%</option><option value="Flat">₹</option></select>
+          </div>
+          <div class="field-wrap"><label>Value</label><input type="number" class="form-control" [(ngModel)]="newPromo.value"></div>
+        </div>
+        <div *ngIf="ownedStores.length > 1" class="automation-item" style="border-color: var(--primary);">
+          <div class="auto-info"><strong>🌐 Deploy to All Stores</strong></div>
+          <div class="auto-action"><label class="switch"><input type="checkbox" [(ngModel)]="newPromo.applyToAllStores"><span class="slider round"></span></label></div>
+        </div>
+      </div>
+      <div class="modal-footer"><button class="btn btn-outline" (click)="closePromoModal()">Cancel</button><button class="btn btn-primary" (click)="savePromoCode()">Generate</button></div>
     </div>
   </div>
 </div>

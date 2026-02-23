@@ -1,7 +1,11 @@
 <div class="table-management-wrapper">
   <div class="header-row">
     <div><h2 class="page-title">Table Management</h2></div>
-    <button class="btn primary add-table-btn" (click)="openSidebar()">+ Add Table</button>
+    
+    <div style="display: flex; gap: 12px; align-items: center;">
+      <button class="btn outline" (click)="openQrModal()" *ngIf="tables.length > 0">🖨️ Print All QRs</button>
+      <button class="btn primary add-table-btn" (click)="openSidebar()">+ Add Table</button>
+    </div>
   </div>
 
   <div class="floor-layout wood-theme">
@@ -94,4 +98,44 @@
   </div>
 
   <div class="overlay" [class.show]="sidebarOpen" (click)="closeSidebar()"></div>
+
+  @if (showQrModal) {
+    <div class="qr-print-backdrop">
+      <div class="qr-print-modal">
+        <div class="modal-header no-print">
+          <h3 style="margin:0; font-size:18px; color:var(--text-main);">Print Table QR Codes</h3>
+          <div>
+            <button class="btn outline" (click)="closeQrModal()" style="margin-right: 10px; padding: 8px 16px;">Cancel</button>
+            <button class="btn primary" (click)="printQRs()" style="padding: 8px 16px;">🖨️ Print Document</button>
+          </div>
+        </div>
+        
+        <div class="modal-body printable-area">
+          <div class="qr-doc-header no-print" style="margin-bottom: 20px; text-align:center; color: var(--text-muted);">
+            Ensure your printer is set to "Print Backgrounds" for best results. Cut along the borders to place on tables!
+          </div>
+          
+          <div class="qr-grid">
+            @for (table of tables; track table.id) {
+              <div class="qr-card">
+                <h4 style="margin: 0 0 12px 0; color: #1f2937; font-size: 20px;">Table {{ table.number }}</h4>
+                <qrcode
+                  [qrdata]="getQrData(table.number)"
+                  [width]="160"
+                  [errorCorrectionLevel]="'M'" 
+                  [margin]="1"
+                  [colorDark]="'#000000'"
+                  [colorLight]="'#ffffff'"
+                ></qrcode>
+                <p style="margin: 12px 0 0 0; font-size: 12px; color: #6b7280; font-weight: 500; text-transform: uppercase; letter-spacing: 1px;">
+                  Scan for Menu
+                </p>
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+    </div>
+  }
+
 </div>

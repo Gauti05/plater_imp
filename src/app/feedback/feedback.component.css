@@ -1,0 +1,92 @@
+.feedback-container {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #eff6ff 0%, #f5f3ff 100%);
+  padding: 20px;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+body.dark-mode .feedback-container { background: #0f172a; }
+
+.feedback-card {
+  background: #ffffff;
+  width: 100%;
+  max-width: 450px;
+  border-radius: 24px;
+  padding: 40px 30px;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.08);
+  text-align: center;
+}
+
+body.dark-mode .feedback-card { background: #1e293b; color: #f8fafc; }
+
+.header-section h2 { margin: 0 0 8px 0; font-size: 24px; color: #0f172a; }
+body.dark-mode .header-section h2 { color: #f8fafc; }
+.header-section p { margin: 0; color: #64748b; font-size: 15px; }
+
+.stars-container {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin: 30px 0 10px 0;
+  flex-direction: row-reverse; /* For RTL hover effect if doing CSS only, but we used JS */
+  direction: ltr;
+}
+
+.star {
+  font-size: 48px;
+  color: #e2e8f0;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  line-height: 1;
+}
+
+body.dark-mode .star { color: #334155; }
+
+.star.active { color: #fbbf24; text-shadow: 0 0 15px rgba(251, 191, 36, 0.4); transform: scale(1.1); }
+
+.rating-text { color: #fbbf24; font-weight: bold; font-size: 16px; height: 24px; margin-bottom: 20px;}
+
+.form-group { text-align: left; margin-bottom: 20px; }
+.form-group label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 8px; color: #475569; }
+body.dark-mode .form-group label { color: #94a3b8; }
+.req { color: #ef4444; }
+
+textarea, input {
+  width: 100%; box-sizing: border-box; padding: 14px; border: 1px solid #cbd5e1;
+  border-radius: 12px; font-family: inherit; font-size: 15px; background: #f8fafc;
+  transition: border 0.3s;
+}
+body.dark-mode textarea, body.dark-mode input { background: #0f172a; border-color: #334155; color: #f8fafc; }
+
+textarea:focus, input:focus { outline: none; border-color: #3b82f6; background: #ffffff; }
+body.dark-mode textarea:focus, body.dark-mode input:focus { background: #1e293b; }
+
+.submit-btn {
+  width: 100%; padding: 16px; background: #3b82f6; color: white; border: none;
+  border-radius: 12px; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.3s; margin-top: 10px;
+}
+.submit-btn:hover:not(:disabled) { background: #2563eb; transform: translateY(-2px); }
+.submit-btn:disabled { background: #94a3b8; cursor: not-allowed; opacity: 0.7; }
+
+/* Success Screen */
+.success-screen { padding: 20px 0; }
+.success-icon {
+  width: 80px; height: 80px; background: #dcfce7; color: #16a34a; font-size: 40px;
+  display: flex; align-items: center; justify-content: center; border-radius: 50%; margin: 0 auto 20px;
+}
+.success-screen h2 { color: #16a34a; margin-bottom: 10px; }
+
+.reward-box {
+  margin-top: 30px; background: #eff6ff; border: 2px dashed #3b82f6; border-radius: 16px; padding: 24px;
+}
+body.dark-mode .reward-box { background: rgba(59,130,246,0.1); }
+.reward-sparkles { font-weight: bold; color: #3b82f6; margin-bottom: 10px; }
+.reward-msg { font-size: 14px; color: #475569; margin-bottom: 16px; line-height: 1.5; }
+body.dark-mode .reward-msg { color: #cbd5e1; }
+.promo-code-display {
+  background: #ffffff; color: #0f172a; font-family: monospace; font-size: 24px; font-weight: bold;
+  padding: 12px; border-radius: 8px; letter-spacing: 2px; margin-bottom: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+}

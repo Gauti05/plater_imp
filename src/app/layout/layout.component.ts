@@ -4,8 +4,8 @@ import { Router, RouterLink, RouterLinkActive, RouterOutlet, ActivatedRoute, Nav
 import { AuthService } from '../core/auth.service';
 import { filter, map } from 'rxjs/operators';
 import { ThemeService } from '../core/theme.service';
-import { Auth, authState } from '@angular/fire/auth'; // ⭐ Added
-import { Firestore, doc, getDoc } from '@angular/fire/firestore'; // ⭐ Added
+import { Auth, authState } from '@angular/fire/auth'; 
+import { Firestore, doc, getDoc } from '@angular/fire/firestore'; 
 
 @Component({
   selector: 'app-layout',
@@ -32,7 +32,6 @@ export class LayoutComponent implements OnInit {
   storeSlug = signal<string>('');
   settingsOpen = signal(false);
 
-  // ⭐ Store User Role to drive UI
   userRole = signal<string>('Staff');
 
   readonly initial = computed(() => {
@@ -60,7 +59,6 @@ export class LayoutComponent implements OnInit {
     });
   }
 
-  // ⭐ Fetch real role on load
   ngOnInit() {
     authState(this.fireAuth).subscribe(async (user) => {
       if (user) {

@@ -85,8 +85,6 @@
 //   { path: '**', redirectTo: '/login' }
 // ];
 
-
-
 import { Routes, CanActivateFn, Router } from '@angular/router';
 import { inject } from '@angular/core';
 import { Auth } from '@angular/fire/auth';
@@ -118,11 +116,11 @@ import { ViewComponent } from './crm/view/view.component';
 import { PayComponent } from './manage/pay/pay.component';
 import { MarketingComponent } from './marketing/marketing.component';
 import { StoreSelectorComponent } from './store-selector/store-selector.component';
-
-// ⭐ Loyalty Settings Component Import
 import { LoyaltySettingsComponent } from './crm/loyalty-settings/loyalty-settings.component';
+import { QrMenuComponent } from './qr-menu/qr-menu.component';
+import { FeedbackComponent } from './feedback/feedback.component'; // ⭐ Kept your import
 
-// ⭐ Admin Guard allowing Owner (Admin) and Manager (Storeadmin)
+
 export const adminGuard: CanActivateFn = () => {
   const auth = inject(Auth);
   const firestore = inject(Firestore);
@@ -168,7 +166,6 @@ export const routes: Routes = [
     component: LayoutComponent,
     children: [
       { path: 'dashboard', component: DashboardComponent, data: { title: 'Dashboard' } },
-      
       { path: 'users', canActivate: [adminGuard], component: UserListComponent, data: { title: 'Users' } },
       { path: 'users/add', canActivate: [adminGuard], component: AddUserComponent, data: { title: 'Add User' } },
       { path: 'users/edit/:id', canActivate: [adminGuard], component: AddUserComponent, data: { title: 'Edit User' } },
@@ -179,12 +176,15 @@ export const routes: Routes = [
       { path: 'discount', canActivate: [adminGuard], component: TableManagementComponent, data: { title: 'Discount' } },
       { path: 'ai-studio', canActivate: [adminGuard], component: AiStudioComponent, data: { title: 'Ai Studio' } },
       { path: 'pay', canActivate: [adminGuard], component: PayComponent, data: { title: 'Payroll' } },
+      
+      // ⭐ Moved to top level children and renamed to match sidebar link
+      { path: 'loyalty-rules', canActivate: [adminGuard], component: LoyaltySettingsComponent, data: { title: 'Loyalty Rules' } },
+
       {
         path: 'inventory',
         canActivate: [adminGuard],
         loadChildren: () => import('./inventory/inventory.routes').then(m => m.INVENTORY_ROUTES)
       },
-
       { path: 'orders', component: OrdersComponent, data: { title: 'Orders' } },
       { path: 'orders/add', component: AddOrderComponent, data: { title: 'Add Order' } },
       { path: 'orders/edit/:id', component: AddOrderComponent, data: { title: 'Edit Order' } },
@@ -193,7 +193,6 @@ export const routes: Routes = [
       
       // CRM ROUTES
       { path: 'crm', component: CrmComponent, data: { title: 'CRM' } },
-      { path: 'crm/loyalty-settings', component: LoyaltySettingsComponent, data: { title: 'Loyalty Rules' } }, 
       { path: 'crm/add', component: AddComponent, data: { title: 'CRM' } },
       { path: 'crm/view/:id', component: ViewComponent, data: { title: 'CRM' } },
       
@@ -210,5 +209,17 @@ export const routes: Routes = [
     path: ':storeSlug/invoice-slip/:orderId',
     component: InvoiceSlipComponent
   },
+  {
+    path: ':storeSlug/menu',
+    component: QrMenuComponent,
+    data: { title: 'Digital Menu' }
+  },
+  // ⭐ NEW: Customer-facing Feedback form route (No auth guard needed so customers can access it)
+  {
+    path: ':storeSlug/feedback',
+    component: FeedbackComponent,
+    data: { title: 'Customer Feedback' }
+  },
+  
   { path: '**', redirectTo: '/login' }
 ];
